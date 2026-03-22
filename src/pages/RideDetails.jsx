@@ -338,7 +338,7 @@ export default function RideDetails() {
             disabled={joinMutation.isPending}
             className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl"
           >
-            {joinMutation.isPending ? "Requesting..." : "Request to Join"}
+            {joinMutation.isPending ? "Joining..." : "Join Ride"}
           </Button>
         )}
 
