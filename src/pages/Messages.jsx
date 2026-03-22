@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Send, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -105,19 +104,37 @@ export default function Messages() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedContact || !user) return;
 
-    setSending(true);
-    const username = user.username || user.email?.split("@")[0] || "rider";
-    await base44.entities.DirectMessage.create({
+    const messageText = newMessage;
+    setNewMessage("");
+    
+    const previousData = queryClient.getQueryData(["direct-messages", user.email]);
+    const optimisticMessage = {
+      id: `optimistic-${Date.now()}`,
       sender_email: user.email,
-      sender_username: username,
+      sender_username: user.username || user.email?.split("@")[0] || "rider",
       recipient_email: selectedContact.email,
       recipient_username: selectedContact.username,
-      text: newMessage,
+      text: messageText,
       read: false,
-    });
-    setNewMessage("");
-    queryClient.invalidateQueries({ queryKey: ["direct-messages"] });
-    setSending(false);
+      created_date: new Date().toISOString(),
+    };
+    
+    queryClient.setQueryData(["direct-messages", user.email], (old) => [...old, optimisticMessage]);
+
+    try {
+      const username = user.username || user.email?.split("@")[0] || "rider";
+      await base44.entities.DirectMessage.create({
+        sender_email: user.email,
+        sender_username: username,
+        recipient_email: selectedContact.email,
+        recipient_username: selectedContact.username,
+        text: messageText,
+        read: false,
+      });
+      queryClient.invalidateQueries({ queryKey: ["direct-messages"] });
+    } catch (err) {
+      queryClient.setQueryData(["direct-messages", user.email], previousData);
+    }
   };
 
   const unreadDMs = directMessages.filter(
@@ -126,7 +143,21 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
+      {selectedContact && (
+        <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
+          <button
+            onClick={() => setSelectedContact(null)}
+            className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <h1 className="text-lg font-bold">Messages</h1>
+        </div>
+      )}
+
       {/* Header */}
+      {!selectedContact && (
       <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
         <h1 className="text-lg font-bold">Messages</h1>
         <span className="text-xs text-muted-foreground">
@@ -134,7 +165,10 @@ export default function Messages() {
         </span>
       </div>
 
+      )}
+
       {/* Tabs */}
+      {!selectedContact && (
       <div className="flex gap-2 px-5 pt-3 border-b border-border">
         <button
           onClick={() => { setActiveTab("direct"); setSelectedContact(null); }}
@@ -158,6 +192,7 @@ export default function Messages() {
           Ride Chats
         </button>
       </div>
+      )}
 
       {/* Content */}
       <div className="px-5 pt-3">

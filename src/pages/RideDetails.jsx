@@ -74,6 +74,23 @@ export default function RideDetails() {
         role: "rider",
       });
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
+      const previousData = queryClient.getQueryData(["participants", rideId]);
+      queryClient.setQueryData(["participants", rideId], (old) => [...old, {
+        id: `optimistic-${Date.now()}`,
+        ride_id: rideId,
+        user_email: user.email,
+        username: user?.username || user?.email?.split("@")[0] || "rider",
+        status: "approved",
+        role: "rider",
+      }]);
+      return previousData;
+    },
+    onError: (err, newData, previousData) => {
+      if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+      toast({ title: "Failed to join ride", variant: "destructive" });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["participants", rideId] });
       toast({ title: "You joined the ride!" });
