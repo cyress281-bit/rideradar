@@ -89,7 +89,7 @@
   }
 
   button, [role="button"], a {
-    @apply user-select-none;
+    @apply select-none;
   }
 
   h1 {

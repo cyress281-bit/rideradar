@@ -311,7 +311,7 @@ export default function Profile() {
 
         <Button
           variant="ghost"
-          className="w-full text-muted-foreground hover:text-foreground user-select-none"
+          className="w-full text-muted-foreground hover:text-foreground select-none"
           onClick={() => base44.auth.logout()}
         >
           <LogOut className="w-4 h-4 mr-2" />
@@ -320,7 +320,7 @@ export default function Profile() {
 
         <Button
           variant="ghost"
-          className="w-full text-destructive hover:bg-destructive/10 user-select-none"
+          className="w-full text-destructive hover:bg-destructive/10 select-none"
           onClick={() => setShowDeleteConfirm(true)}
         >
           <UserX className="w-4 h-4 mr-2" />
@@ -355,14 +355,14 @@ export default function Profile() {
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className="flex-1 user-select-none"
+                  className="flex-1 select-none"
                   onClick={() => setShowDeleteConfirm(false)}
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
-                  className="flex-1 user-select-none"
+                  className="flex-1 select-none"
                   onClick={handleDeleteAccount}
                 >
                   Delete
