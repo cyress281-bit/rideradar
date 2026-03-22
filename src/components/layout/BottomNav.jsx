@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { Home, Map, Navigation, User, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Home, Map, Navigation, User, MessageCircle, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -87,6 +88,24 @@ export default function BottomNav() {
             </button>
           );
         })}
+        
+        {/* Create Ride Button */}
+        <Link to="/create-ride">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px] rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label="Create a new ride"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary rounded-full blur-sm opacity-40" />
+              <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
+                <Plus className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} aria-hidden="true" />
+              </div>
+            </div>
+            <span className="text-xs mt-1 font-medium text-primary">Create</span>
+          </motion.button>
+        </Link>
       </div>
     </nav>
   );
