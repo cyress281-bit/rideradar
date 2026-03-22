@@ -197,6 +197,15 @@ export default function LiveGrid() {
           />
         ))}
 
+        {/* Active ride pins (tappable) */}
+        {activeRides.map((ride) => (
+          <ActiveRidePin
+            key={`pin-${ride.id}`}
+            ride={ride}
+            onClick={() => setSelectedRide(ride)}
+          />
+        ))}
+
         {/* Active ride: show live rider dots */}
         {activeRides.map((ride) =>
           riderLocations
