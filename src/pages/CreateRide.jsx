@@ -166,6 +166,32 @@ export default function CreateRide() {
           />
         </div>
 
+        {/* Ride Type toggle */}
+        <div className="flex rounded-xl overflow-hidden border border-border bg-secondary/40 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setRideType("casual")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              rideType === "casual"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Zap className="w-4 h-4" /> Casual Ride
+          </button>
+          <button
+            type="button"
+            onClick={() => setRideType("planned_event")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              rideType === "planned_event"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Calendar className="w-4 h-4" /> Planned Event
+          </button>
+        </div>
+
         {/* Ride Now / Schedule toggle */}
         <div className="flex rounded-xl overflow-hidden border border-border bg-secondary/40 p-1 gap-1">
           <button
@@ -191,6 +217,44 @@ export default function CreateRide() {
             <CalendarClock className="w-4 h-4" /> Schedule Later
           </button>
         </div>
+
+        {/* Event format for planned events */}
+        {rideType === "planned_event" && (
+          <div className="flex rounded-xl overflow-hidden border border-border bg-secondary/40 p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setEventFormat("stationary")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                eventFormat === "stationary"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              📍 Stationary Gathering
+            </button>
+            <button
+              type="button"
+              onClick={() => setEventFormat("route")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                eventFormat === "route"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🛣️ Planned Route
+            </button>
+          </div>
+        )}
+
+        {/* Location name for planned events */}
+        {rideType === "planned_event" && (
+          <Input
+            placeholder="Venue or business name"
+            value={form.location_name}
+            onChange={(e) => updateField("location_name", e.target.value)}
+            className="bg-secondary border-border"
+          />
+        )}
 
         {rideMode === "now" && (
           <div className="flex items-start gap-2.5 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2.5">
