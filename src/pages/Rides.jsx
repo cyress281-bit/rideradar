@@ -16,12 +16,10 @@ export default function Rides() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: allRides = [], refetch: refetchRides } = useQuery({
+  const { data: allRides = [] } = useQuery({
     queryKey: ["all-rides"],
     queryFn: () => base44.entities.Ride.list("-created_date", 100),
   });
-
-  const { scrollContainerRef, progress, handlers } = usePullToRefresh(() => refetchRides());
 
   const { data: myParticipations = [] } = useQuery({
     queryKey: ["my-participations", user?.email],
