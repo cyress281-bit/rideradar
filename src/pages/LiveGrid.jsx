@@ -229,6 +229,15 @@ export default function LiveGrid() {
           />
         ))}
 
+        {/* Active ride route polylines */}
+        {activeRides.map((ride) => (
+          <RideRoutePolyline
+            key={`route-${ride.id}`}
+            trackPoints={trackPoints.filter((tp) => tp.ride_id === ride.id)}
+            rideStatus={ride.status}
+          />
+        ))}
+
         {/* Active ride pins (tappable) */}
         {activeRides.map((ride) => (
           <ActiveRidePin
