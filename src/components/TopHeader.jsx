@@ -5,7 +5,15 @@ import { useTabNavigation } from "@/context/TabNavigationContext";
 
 export default function TopHeader() {
   const location = useLocation();
-  const { goBack } = useTabNavigation();
+  
+  let goBack = null;
+  try {
+    const nav = useTabNavigation();
+    goBack = nav.goBack;
+  } catch {
+    // Context not available, use browser back
+    goBack = () => window.history.back();
+  }
 
   // Show back button for all non-root paths
   const isRootPath = location.pathname === "/";
