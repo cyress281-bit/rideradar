@@ -118,17 +118,37 @@ export default function Profile() {
       </div>
 
       <div className="px-5 space-y-6">
-        {/* Avatar area */}
+        {/* Avatar area with upload */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-            <span className="text-2xl font-bold text-primary">
-              {form.username?.[0]?.toUpperCase() || "?"}
-            </span>
-          </div>
+          <label className="relative cursor-pointer group">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
+              {form.profile_pic_url ? (
+                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-primary">
+                  {form.username?.[0]?.toUpperCase() || "?"}
+                </span>
+              )}
+            </div>
+            <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploading ? (
+                <Loader className="w-5 h-5 text-white animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5 text-white" />
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePicUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
           <div>
             <p className="font-bold text-base">@{form.username || "anonymous"}</p>
             <div className="flex items-center gap-2 mt-1">
