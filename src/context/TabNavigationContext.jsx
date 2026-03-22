@@ -88,7 +88,7 @@ export function TabNavigationProvider({ children }) {
     (tabName) => {
       const currentTab = getCurrentTab();
       
-      // Save current scroll position before switching
+      // Save current scroll position and state before switching
       if (currentTab) {
         const mainElement = document.querySelector('main');
         if (mainElement) {
@@ -102,8 +102,8 @@ export function TabNavigationProvider({ children }) {
       const targetPath = stack[stack.length - 1];
       if (location.pathname === targetPath) return;
 
-      setDirection("push");
       navigate(targetPath, { replace: false });
+      setTabState(prev => prev + 1); // Trigger re-render
 
       // Restore scroll position after navigation completes
       requestAnimationFrame(() => {
@@ -113,7 +113,7 @@ export function TabNavigationProvider({ children }) {
         }
       });
     },
-    [navigate, location.pathname, getCurrentTab, setDirection]
+    [navigate, location.pathname, getCurrentTab]
   );
 
   const goBack = useCallback(() => {
@@ -123,25 +123,8 @@ export function TabNavigationProvider({ children }) {
     const stack = stacksRef.current[tab];
     if (!stack || stack.length <= 1) return;
 
-    setDirection("pop");
     navigate(-1);
-  }, [getCurrentTab, navigate, setDirection]);
-
-  // Browser back/forward only updates animation direction; stack sync is handled by location changes.
-  useEffect(() => {
-    const handlePopState = () => {
-      if (popStateFrameRef.current) cancelAnimationFrame(popStateFrameRef.current);
-      popStateFrameRef.current = requestAnimationFrame(() => {
-        setDirection("pop");
-      });
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      if (popStateFrameRef.current) cancelAnimationFrame(popStateFrameRef.current);
-    };
-  }, [setDirection]);
+  }, [getCurrentTab, navigate]);
 
   // Save scroll position when main element scrolls
   useEffect(() => {
