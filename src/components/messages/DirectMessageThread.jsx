@@ -3,8 +3,10 @@ import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTabNavigation } from "@/context/TabNavigationContext";
 
 export default function DirectMessageThread({ contact, messages, user, onBack }) {
+  const { goBack } = useTabNavigation();
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -34,8 +36,8 @@ export default function DirectMessageThread({ contact, messages, user, onBack })
       {/* Header */}
       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
         <button
-          onClick={onBack}
-          className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80"
+          onClick={() => goBack()}
+          className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80 min-h-[44px] min-w-[44px]"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -46,7 +48,7 @@ export default function DirectMessageThread({ contact, messages, user, onBack })
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-2 mb-4">
+      <div className="flex-1 overflow-y-auto space-y-2 mb-4" style={{ overscrollBehavior: 'none' }}>
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-xs text-muted-foreground">No messages yet. Start the conversation!</p>

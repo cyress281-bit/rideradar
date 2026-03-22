@@ -1,4 +1,4 @@
-import React, { memo, Suspense, lazy } from "react";
+import React, { memo, Suspense, lazy, useCallback } from "react";
 import { motion } from "framer-motion";
 
 const MapContainer = lazy(() => import("react-leaflet").then(m => ({ default: m.MapContainer })));
@@ -14,14 +14,25 @@ const MapLoader = () => (
   </motion.div>
 );
 
-const LazyMapWrapper = memo(function LazyMapWrapper({ children, ...props }) {
-  return (
-    <Suspense fallback={<MapLoader />}>
-      <MapContainer {...props}>
-        {children}
-      </MapContainer>
-    </Suspense>
-  );
-});
+const LazyMapWrapper = memo(
+  function LazyMapWrapper({ children, ...props }) {
+    return (
+      <Suspense fallback={<MapLoader />}>
+        <MapContainer {...props} style={{ overscrollBehavior: 'none' }}>
+          {children}
+        </MapContainer>
+      </Suspense>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Memoize by checking key props that affect rendering
+    return (
+      prevProps.center === nextProps.center &&
+      prevProps.zoom === nextProps.zoom &&
+      prevProps.className === nextProps.className &&
+      prevProps.children === nextProps.children
+    );
+  }
+);
 
 export default LazyMapWrapper;

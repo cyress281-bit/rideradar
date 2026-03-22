@@ -191,7 +191,7 @@ export default function RideDetails() {
   const isExpired = isPast(endTime) && ride.status !== "completed" && ride.status !== "cancelled";
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none' }}>
       {/* Header removed - TopHeader component handles it */}
 
       {/* Map */}

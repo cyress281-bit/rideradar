@@ -238,7 +238,7 @@ export default function LiveGrid() {
   }, [meetupRides, activeRides]);
 
   return (
-    <div className="h-[calc(100vh-80px)] relative overflow-hidden">
+    <div className="h-[calc(100vh-80px)] relative overflow-hidden" style={{ overscrollBehavior: 'none' }}>
       <MapContainer
         center={[34.05, -118.25]}
         zoom={11}

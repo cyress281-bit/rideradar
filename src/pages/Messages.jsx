@@ -148,7 +148,7 @@ export default function Messages() {
   ).length;
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-24 bg-background" style={{ overscrollBehavior: 'none' }}>
       {/* Header */}
       {!selectedContact && (
       <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
