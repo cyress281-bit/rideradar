@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -6,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SelectDrawer from "@/components/SelectDrawer";
 import {
   User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX, Camera, Loader, AlertTriangle
+  Save, LogOut, UserX, Camera, Loader, AlertTriangle, ArrowLeft
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
@@ -125,10 +126,17 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="px-5 pt-4 pb-3">
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+        <Link
+          to="/"
+          className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
         <h1 className="text-lg font-bold">Profile</h1>
-        <p className="text-xs text-muted-foreground">Your rider identity</p>
       </div>
+
 
       <div className="px-5 space-y-6">
         {/* Avatar area with upload */}
@@ -201,20 +209,21 @@ export default function Profile() {
             <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
             <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
           </div>
-          <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
-            <SelectTrigger className="bg-secondary border-border">
-              <SelectValue placeholder="Bike class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sportbike">Sportbike</SelectItem>
-              <SelectItem value="cruiser">Cruiser</SelectItem>
-              <SelectItem value="adventure">Adventure</SelectItem>
-              <SelectItem value="naked">Naked</SelectItem>
-              <SelectItem value="touring">Touring</SelectItem>
-              <SelectItem value="dual_sport">Dual Sport</SelectItem>
-              <SelectItem value="scooter">Scooter</SelectItem>
-            </SelectContent>
-          </Select>
+          <SelectDrawer
+            value={form.bike_class}
+            onValueChange={(v) => updateField("bike_class", v)}
+            label="Select Bike Class"
+            placeholder="Bike class"
+            options={[
+              { value: "sportbike", label: "Sportbike" },
+              { value: "cruiser", label: "Cruiser" },
+              { value: "adventure", label: "Adventure" },
+              { value: "naked", label: "Naked" },
+              { value: "touring", label: "Touring" },
+              { value: "dual_sport", label: "Dual Sport" },
+              { value: "scooter", label: "Scooter" }
+            ]}
+          />
         </div>
 
         {/* Motorcycle models */}

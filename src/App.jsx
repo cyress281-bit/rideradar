@@ -2,10 +2,11 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import RouteTransition from '@/components/RouteTransition';
 
 import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
@@ -40,50 +41,20 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <Home />
-          </motion.div>
-        } />
-        <Route path="/grid" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <LiveGrid />
-          </motion.div>
-        } />
-        <Route path="/rides" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <Rides />
-          </motion.div>
-        } />
-        <Route path="/rides/:rideId" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <RideDetails />
-          </motion.div>
-        } />
-        <Route path="/create-ride" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <CreateRide />
-          </motion.div>
-        } />
-        <Route path="/profile" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <Profile />
-          </motion.div>
-        } />
-        <Route path="/messages" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <Messages />
-          </motion.div>
-        } />
-      </Route>
-      <Route path="*" element={
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-          <PageNotFound />
-        </motion.div>
-      } />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<RouteTransition><Home /></RouteTransition>} />
+          <Route path="/grid" element={<RouteTransition><LiveGrid /></RouteTransition>} />
+          <Route path="/rides" element={<RouteTransition><Rides /></RouteTransition>} />
+          <Route path="/rides/:rideId" element={<RouteTransition><RideDetails /></RouteTransition>} />
+          <Route path="/create-ride" element={<RouteTransition><CreateRide /></RouteTransition>} />
+          <Route path="/profile" element={<RouteTransition><Profile /></RouteTransition>} />
+          <Route path="/messages" element={<RouteTransition><Messages /></RouteTransition>} />
+        </Route>
+        <Route path="*" element={<RouteTransition><PageNotFound /></RouteTransition>} />
+      </Routes>
+    </AnimatePresence>
   );
 };
 

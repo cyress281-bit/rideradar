@@ -126,7 +126,7 @@ export default function RideDetails() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
         <button 
           onClick={() => navigate(-1)} 
           className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SelectDrawer from "@/components/SelectDrawer";
 import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -119,7 +119,7 @@ export default function CreateRide() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
         <button 
           onClick={() => navigate(-1)} 
           className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
@@ -287,17 +287,17 @@ export default function CreateRide() {
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> Duration
             </Label>
-            <Select value={form.duration_minutes} onValueChange={(v) => updateField("duration_minutes", v)}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">30 min</SelectItem>
-                <SelectItem value="60">1 hour</SelectItem>
-                <SelectItem value="120">2 hours</SelectItem>
-                <SelectItem value="180">3 hours</SelectItem>
-              </SelectContent>
-            </Select>
+            <SelectDrawer
+              value={form.duration_minutes}
+              onValueChange={(v) => updateField("duration_minutes", v)}
+              label="Select Duration"
+              options={[
+                { value: "30", label: "30 min" },
+                { value: "60", label: "1 hour" },
+                { value: "120", label: "2 hours" },
+                { value: "180", label: "3 hours" }
+              ]}
+            />
           </div>
         </div>
 
@@ -305,19 +305,20 @@ export default function CreateRide() {
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" /> Vibe
           </Label>
-          <Select value={form.vibe} onValueChange={(v) => updateField("vibe", v)}>
-            <SelectTrigger className="bg-secondary border-border">
-              <SelectValue placeholder="Select vibe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="chill">Chill</SelectItem>
-              <SelectItem value="fast">Fast</SelectItem>
-              <SelectItem value="night_ride">Night Ride</SelectItem>
-              <SelectItem value="scenic">Scenic</SelectItem>
-              <SelectItem value="adventure">Adventure</SelectItem>
-              <SelectItem value="commute">Commute</SelectItem>
-            </SelectContent>
-          </Select>
+          <SelectDrawer
+            value={form.vibe}
+            onValueChange={(v) => updateField("vibe", v)}
+            label="Select Vibe"
+            placeholder="Select vibe"
+            options={[
+              { value: "chill", label: "Chill" },
+              { value: "fast", label: "Fast" },
+              { value: "night_ride", label: "Night Ride" },
+              { value: "scenic", label: "Scenic" },
+              { value: "adventure", label: "Adventure" },
+              { value: "commute", label: "Commute" }
+            ]}
+          />
         </div>
 
         <div>
