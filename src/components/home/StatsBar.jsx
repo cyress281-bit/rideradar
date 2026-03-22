@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function StatsBar({ totalRiders, activeRides, meetups }) {
   const stats = [
-    { icon: Users, label: "On Radar", value: totalRiders, color: "text-primary" },
+    { icon: Users, label: "Nearby (15mi)", value: totalRiders, color: "text-primary" },
     { icon: Bike, label: "Riding", value: activeRides, color: "text-green-400" },
     { icon: MapPin, label: "Meetups", value: meetups, color: "text-blue-400" },
   ];
