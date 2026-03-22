@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useTabNavigation } from "@/context/TabNavigationContext";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
 export default function BottomNav() {
   const location = useLocation();
   const { switchTab, getCurrentTab } = useTabNavigation();
+  const { trigger: haptic } = useHapticFeedback();
   const [user, setUser] = useState(null);
   const currentTab = getCurrentTab();
 
@@ -43,7 +45,10 @@ export default function BottomNav() {
           return (
             <button
               key={item.id}
-              onClick={() => switchTab(item.id)}
+              onClick={() => {
+                haptic("selection");
+                switchTab(item.id);
+              }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px] rounded-lg transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"

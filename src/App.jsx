@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import RouteTransition from '@/components/RouteTransition';
 import { TabNavigationProvider } from '@/context/TabNavigationContext';
+import { NavigationDirectionProvider } from '@/context/NavigationDirectionContext';
 
 import AppLayout from './components/layout/AppLayout';
 const Home = lazy(() => import('./pages/Home'));
@@ -76,9 +77,11 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <TabNavigationProvider>
-            <AuthenticatedApp />
-          </TabNavigationProvider>
+          <NavigationDirectionProvider>
+            <TabNavigationProvider>
+              <AuthenticatedApp />
+            </TabNavigationProvider>
+          </NavigationDirectionProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>

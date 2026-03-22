@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigationDirection } from "./NavigationDirectionContext";
 
 const TabNavigationContext = createContext();
 
@@ -14,6 +15,7 @@ const TAB_ROOT_PATHS = {
 export function TabNavigationProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { setDirection } = useNavigationDirection();
   
   // Initialize and maintain stable tab stacks
   const stacksRef = useRef({
@@ -102,9 +104,11 @@ export function TabNavigationProvider({ children }) {
       const targetPath = stack[stack.length - 1];
       if (location.pathname === targetPath) return;
 
+      // Tab switch is a "push" navigation
+      setDirection("push");
+      
       // Use React Router's navigate with replace=false for standard history behavior
       navigate(targetPath, { replace: false });
-      lastNavigationTimeRef.current = Date.now();
 
       // Restore scroll position after navigation completes
       requestAnimationFrame(() => {
@@ -114,7 +118,7 @@ export function TabNavigationProvider({ children }) {
         }
       });
     },
-    [navigate, location.pathname, getCurrentTab]
+    [navigate, location.pathname, getCurrentTab, setDirection]
   );
 
   const goBack = useCallback(() => {
@@ -127,8 +131,9 @@ export function TabNavigationProvider({ children }) {
     // Pop from stack and navigate
     stack.pop();
     isFromPopStateRef.current = true;
+    setDirection("pop");
     navigate(-1);
-  }, [getCurrentTab, navigate]);
+  }, [getCurrentTab, navigate, setDirection]);
 
   // Handle external back gestures (iOS swipe back, browser back button)
   useEffect(() => {
