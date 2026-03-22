@@ -5,6 +5,7 @@ import HomeHeader from "../components/home/HomeHeader";
 import StatsBar from "../components/home/StatsBar";
 import MiniMap from "../components/home/MiniMap";
 import RideSection from "../components/home/RideSection";
+import RideCard from "../components/rides/RideCard";
 import CreateRideButton from "../components/rides/CreateRideButton";
 
 export default function Home() {
