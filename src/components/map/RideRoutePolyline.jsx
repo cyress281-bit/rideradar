@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 
 // Groups track points by user, draws one polyline per rider
-export default function RideRoutePolyline({ trackPoints, rideStatus }) {
+const RideRoutePolyline = memo(function RideRoutePolyline({ trackPoints, rideStatus }) {
   const map = useMap();
   const layersRef = useRef([]);
 
@@ -62,4 +62,6 @@ export default function RideRoutePolyline({ trackPoints, rideStatus }) {
   }, [trackPoints, map, rideStatus]);
 
   return null;
-}
+});
+
+export default RideRoutePolyline;

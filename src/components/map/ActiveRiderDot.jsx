@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Marker } from "react-leaflet";
 import L from "leaflet";
 
@@ -9,7 +9,7 @@ function createRiderIcon(username, isCurrentUser) {
     className: "custom-marker",
     html: `
       <div style="position:relative">
-        <div style="background:${bg};color:${text};border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;border:2px solid ${isCurrentUser ? "#005a14" : "#333"};box-shadow:0 0 10px ${isCurrentUser ? "rgba(0,240,50,0.7)" : "rgba(255,255,255,0.3)"};white-space:nowrap">
+        <div style="background:${bg};color:${text};border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;border:2px solid ${isCurrentUser ? "#005a14" : "#333"};box-shadow:0 0 10px ${isCurrentUser ? "rgba(0,240,50,0.7)" : "rgba(255,255,255,0.3)"};white-space:nowrap">
           ${isCurrentUser ? "● " : ""}@${username}
         </div>
         <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${bg};margin:0 auto;width:10px"></div>
@@ -19,7 +19,7 @@ function createRiderIcon(username, isCurrentUser) {
   });
 }
 
-export default function ActiveRiderDot({ location, isCurrentUser }) {
+const ActiveRiderDot = memo(function ActiveRiderDot({ location, isCurrentUser }) {
   if (!location.lat || !location.lng) return null;
   return (
     <Marker
@@ -27,4 +27,6 @@ export default function ActiveRiderDot({ location, isCurrentUser }) {
       icon={createRiderIcon(location.username, isCurrentUser)}
     />
   );
-}
+});
+
+export default ActiveRiderDot;
