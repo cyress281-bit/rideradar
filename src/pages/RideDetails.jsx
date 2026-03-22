@@ -77,22 +77,24 @@ export default function RideDetails() {
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
       const previousData = queryClient.getQueryData(["participants", rideId]);
-      queryClient.setQueryData(["participants", rideId], (old) => [...old, {
+      const optimisticParticipant = {
         id: `optimistic-${Date.now()}`,
         ride_id: rideId,
         user_email: user.email,
         username: user?.username || user?.email?.split("@")[0] || "rider",
         status: "approved",
         role: "rider",
-      }]);
+      };
+      queryClient.setQueryData(["participants", rideId], (old) => [...(old || []), optimisticParticipant]);
+      setJoined(true);
       return previousData;
     },
     onError: (err, newData, previousData) => {
       if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+      setJoined(false);
       toast({ title: "Failed to join ride", variant: "destructive" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participants", rideId] });
       toast({ title: "You joined the ride!" });
     },
   });

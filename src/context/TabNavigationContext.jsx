@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useRef, useEffect } from "react";
+import React, { createContext, useContext, useCallback, useRef, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const TabNavigationContext = createContext();
@@ -13,6 +13,7 @@ export function TabNavigationProvider({ children }) {
     messages: ["/messages"],
     profile: ["/profile"],
   });
+  const [isHistorySynced, setIsHistorySynced] = useState(false);
 
   const getCurrentTab = useCallback(() => {
     const path = location.pathname;
@@ -21,7 +22,7 @@ export function TabNavigationProvider({ children }) {
     if (path.startsWith("/rides")) return "rides";
     if (path.startsWith("/messages")) return "messages";
     if (path.startsWith("/profile")) return "profile";
-    if (path.startsWith("/create-ride")) return "rides"; // Treat as part of rides flow
+    if (path.startsWith("/create-ride")) return "rides";
     return null;
   }, [location.pathname]);
 
@@ -29,21 +30,11 @@ export function TabNavigationProvider({ children }) {
     const stacks = stacksRef.current;
     const stack = stacks[tabName];
     if (stack && stack.length > 0) {
-      navigate(stack[stack.length - 1]);
+      const targetPath = stack[stack.length - 1];
+      window.history.pushState({ tab: tabName, path: targetPath }, "", targetPath);
+      navigate(targetPath);
     }
   }, [navigate]);
-
-  const updateTabStack = useCallback((path) => {
-    const tab = getCurrentTab();
-    if (!tab) return;
-
-    const stacks = stacksRef.current;
-    const stack = stacks[tab];
-
-    if (stack[stack.length - 1] !== path) {
-      stack.push(path);
-    }
-  }, [getCurrentTab]);
 
   const goBack = useCallback(() => {
     const tab = getCurrentTab();
@@ -54,9 +45,47 @@ export function TabNavigationProvider({ children }) {
 
     if (stack.length > 1) {
       stack.pop();
-      navigate(stack[stack.length - 1]);
+      const targetPath = stack[stack.length - 1];
+      window.history.replaceState({ tab, path: targetPath }, "", targetPath);
+      navigate(targetPath, { replace: true });
+    } else {
+      window.history.back();
     }
   }, [getCurrentTab, navigate]);
+
+  const updateTabStack = useCallback((path) => {
+    const tab = getCurrentTab();
+    if (!tab) return;
+
+    const stacks = stacksRef.current;
+    const stack = stacks[tab];
+
+    if (stack[stack.length - 1] !== path) {
+      stack.push(path);
+      window.history.pushState({ tab, path }, "", path);
+    }
+  }, [getCurrentTab]);
+
+  // Handle native back gestures via popstate event
+  useEffect(() => {
+    const handlePopState = (e) => {
+      const state = e.state;
+      if (state && state.tab && state.path) {
+        const tab = state.tab;
+        const stacks = stacksRef.current;
+        const stack = stacks[tab];
+        
+        // Sync stack to match history state
+        if (stack[stack.length - 1] !== state.path) {
+          stack.pop();
+        }
+        navigate(state.path);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [navigate]);
 
   useEffect(() => {
     updateTabStack(location.pathname);
