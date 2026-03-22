@@ -73,6 +73,21 @@ export default function LiveGrid() {
     refetchInterval: 10000,
   });
 
+  // Fetch track points for active rides
+  const activeRideIds = rides.filter((r) => r.status === "active").map((r) => r.id);
+  const { data: trackPoints = [] } = useQuery({
+    queryKey: ["track-points", activeRideIds.join(",")],
+    queryFn: async () => {
+      if (activeRideIds.length === 0) return [];
+      const results = await Promise.all(
+        activeRideIds.map((id) => base44.entities.RideTrackPoint.filter({ ride_id: id }, "created_date", 500))
+      );
+      return results.flat();
+    },
+    enabled: activeRideIds.length > 0,
+    refetchInterval: 10000,
+  });
+
   // Fetch all rider locations for active/meetup rides
   const { data: riderLocations = [] } = useQuery({
     queryKey: ["rider-locations", rideIds.join(",")],
