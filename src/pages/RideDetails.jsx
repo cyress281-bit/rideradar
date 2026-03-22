@@ -127,7 +127,11 @@ export default function RideDetails() {
     <div className="min-h-screen pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
+          aria-label="Go back"
+        >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <h1 className="text-lg font-bold truncate">{ride.title}</h1>
@@ -275,16 +279,18 @@ export default function RideDetails() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                      className="min-h-[44px] min-w-[44px] p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"
                       onClick={() => approveMutation.mutate(p.id)}
+                      aria-label="Approve rider"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      className="min-h-[44px] min-w-[44px] p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       onClick={() => declineMutation.mutate(p.id)}
+                      aria-label="Decline rider"
                     >
                       <XCircle className="w-4 h-4" />
                     </Button>
@@ -305,7 +311,13 @@ export default function RideDetails() {
                 onChange={(e) => setStatusMsg(e.target.value)}
                 className="bg-secondary border-border flex-1"
               />
-              <Button onClick={updateStatusMessage} size="sm" variant="secondary" className="px-3">
+              <Button 
+                onClick={updateStatusMessage} 
+                size="sm" 
+                variant="secondary" 
+                className="min-h-[44px] min-w-[44px]"
+                aria-label="Send status message"
+              >
                 <MessageSquare className="w-4 h-4" />
               </Button>
             </div>

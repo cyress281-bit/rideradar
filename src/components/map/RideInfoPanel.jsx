@@ -65,7 +65,8 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       <div className="p-4">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+          className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+          aria-label="Close ride panel"
         >
           <X className="w-3.5 h-3.5" />
         </button>
