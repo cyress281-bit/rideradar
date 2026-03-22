@@ -47,10 +47,12 @@ export default function Profile() {
       setUser(u);
       setForm({
         username: u.username || u.email?.split("@")[0] || "",
+        profile_pic_url: u.profile_pic_url || "",
         bike_make: u.bike_make || "",
         bike_model: u.bike_model || "",
         bike_year: u.bike_year || "",
         bike_class: u.bike_class || "",
+        motorcycle_models: u.motorcycle_models || [],
         ride_preferences: u.ride_preferences || [],
         invisible_mode: u.invisible_mode || false,
       });
