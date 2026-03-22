@@ -1,8 +1,9 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { Users, Clock, MapPin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Users, Clock, MapPin, UserPlus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatDistanceToNow, isPast } from "date-fns";
+import { base44 } from "@/api/base44Client";
 
 const vibeColors = {
   chill: "from-blue-500/20 to-blue-500/5 border-blue-500/20",
@@ -31,16 +32,45 @@ const vibeEmoji = {
   commute: "🛣️",
 };
 
-export default function RidePreviewCard({ ride, index = 0 }) {
-  const startTime = new Date(ride.start_time);
-  const isStarted = isPast(startTime);
-  const timeLabel = isStarted
-    ? formatDistanceToNow(startTime, { addSuffix: true })
-    : formatDistanceToNow(startTime, { addSuffix: true });
+export default function RidePreviewCard({ ride, index = 0, user }) {
+  const [joined, setJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [isHost, setIsHost] = useState(false);
 
+  const startTime = new Date(ride.start_time);
+  const timeLabel = formatDistanceToNow(startTime, { addSuffix: true });
   const gradientClass = vibeColors[ride.vibe] || "from-secondary/60 to-secondary/20 border-border/50";
   const accentClass = vibeAccent[ride.vibe] || "text-muted-foreground";
   const emoji = vibeEmoji[ride.vibe] || "🏍️";
+
+  useEffect(() => {
+    if (!user) return;
+    setIsHost(ride.host_email === user.email);
+    // Check if already joined
+    base44.entities.RideParticipant.filter({ ride_id: ride.id, user_email: user.email })
+      .then((participants) => {
+        if (participants.length > 0) setJoined(true);
+      })
+      .catch(() => {});
+  }, [user, ride.id, ride.host_email]);
+
+  const handleJoin = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || joining || joined || isHost) return;
+    setJoining(true);
+    const username = user.username || user.email?.split("@")[0] || "rider";
+    await base44.entities.RideParticipant.create({
+      ride_id: ride.id,
+      user_email: user.email,
+      username,
+      status: "approved",
+      role: "rider",
+    });
+    await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
+    setJoined(true);
+    setJoining(false);
+  };
 
   return (
     <motion.div
@@ -89,8 +119,8 @@ export default function RidePreviewCard({ ride, index = 0 }) {
           <p className="mt-2 text-[10px] text-primary/80 italic truncate">"{ride.status_message}"</p>
         )}
 
-        {/* Status pill */}
-        <div className="mt-2.5 flex">
+        {/* Bottom row: status pill + quick join */}
+        <div className="mt-2.5 flex items-center justify-between">
           {ride.status === "active" ? (
             <span className="text-[9px] font-bold uppercase tracking-wider bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full">
               Riding Now
@@ -99,6 +129,26 @@ export default function RidePreviewCard({ ride, index = 0 }) {
             <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
               <MapPin className="w-2.5 h-2.5" /> Meetup
             </span>
+          )}
+
+          {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
+            <button
+              onClick={handleJoin}
+              disabled={joining || joined}
+              className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
+                joined
+                  ? "bg-green-500/15 text-green-400 border-green-500/20"
+                  : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 active:scale-95"
+              }`}
+            >
+              {joined ? (
+                <><Check className="w-3 h-3" /> Joined</>
+              ) : joining ? (
+                "..."
+              ) : (
+                <><UserPlus className="w-3 h-3" /> Join</>
+              )}
+            </button>
           )}
         </div>
       </Link>
