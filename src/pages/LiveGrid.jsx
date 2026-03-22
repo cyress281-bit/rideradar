@@ -273,6 +273,7 @@ export default function LiveGrid() {
             ride={selectedRide}
             participants={allParticipants.filter((p) => p.ride_id === selectedRide.id)}
             riderLocations={riderLocations}
+            user={user}
             onClose={() => setSelectedRide(null)}
           />
         )}
