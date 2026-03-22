@@ -331,7 +331,13 @@ export default function CreateRide() {
           disabled={submitting}
           className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl"
         >
-          {submitting ? "Creating..." : rideMode === "now" ? "🚀 Ride Now — Notify Riders" : "📅 Schedule Ride"}
+          {submitting
+            ? "Creating..."
+            : rideType === "planned_event"
+            ? `📅 Create ${eventFormat === "stationary" ? "Gathering" : "Event Route"}`
+            : rideMode === "now"
+            ? "🚀 Ride Now — Notify Riders"
+            : "📅 Schedule Ride"}
         </Button>
       </form>
     </div>
