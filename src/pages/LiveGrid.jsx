@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
-import { Radio, Layers, RefreshCw } from "lucide-react";
+import { Radio } from "lucide-react";
 import MeetupPin from "@/components/map/MeetupPin";
 import ActiveRiderDot from "@/components/map/ActiveRiderDot";
 import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
 import RideRoutePolyline from "@/components/map/RideRoutePolyline";
+import MarkerClusterGroup from "@/components/map/MarkerClusterGroup";
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
@@ -216,6 +217,26 @@ export default function LiveGrid() {
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
 
+  // Prepare clusterable markers (meetup + active rides)
+  const clusterMarkers = useMemo(() => {
+    return [
+      ...meetupRides.map((ride) => ({
+        position: [ride.meetup_lat, ride.meetup_lng],
+        id: `meetup-${ride.id}`,
+        type: "meetup",
+        rideId: ride.id,
+        icon: null, // Will be rendered by component
+      })),
+      ...activeRides.map((ride) => ({
+        position: [ride.meetup_lat, ride.meetup_lng],
+        id: `active-${ride.id}`,
+        type: "active",
+        rideId: ride.id,
+        icon: null,
+      })),
+    ];
+  }, [meetupRides, activeRides]);
+
   return (
     <div className="h-[calc(100vh-80px)] relative overflow-hidden">
       <MapContainer
@@ -227,6 +248,7 @@ export default function LiveGrid() {
       >
         <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
         <MapAutoCenter rides={rides} />
+        <MarkerClusterGroup markers={clusterMarkers} />
 
         {/* Meetup pins */}
         {meetupRides.map((ride) => (
