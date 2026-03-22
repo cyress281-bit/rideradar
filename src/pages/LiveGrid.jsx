@@ -171,8 +171,22 @@ export default function LiveGrid() {
           await upsertLocation(ride, lat, lng, true);
         }
       } else if (ride.status === "active") {
-        // Just update position for live tracking
+        // Update position for live tracking
         await upsertLocation(ride, lat, lng, true);
+        // Record track point every TRACK_INTERVAL_MS
+        const now = Date.now();
+        const lastTime = lastTrackPointTime.current[ride.id] || 0;
+        if (now - lastTime >= TRACK_INTERVAL_MS) {
+          lastTrackPointTime.current[ride.id] = now;
+          await base44.entities.RideTrackPoint.create({
+            ride_id: ride.id,
+            user_email: user.email,
+            lat,
+            lng,
+            recorded_at: new Date().toISOString(),
+          });
+          queryClient.invalidateQueries({ queryKey: ["track-points"] });
+        }
       }
     }
   }, [user, rides, allParticipants, checkedInRides, riderLocations, upsertLocation, queryClient]);
