@@ -104,16 +104,41 @@ export default function RideDetails() {
       await base44.entities.RideParticipant.update(participantId, { status: "approved" });
       await base44.entities.Ride.update(rideId, { rider_count: (ride.rider_count || 1) + 1 });
     },
+    onMutate: async (participantId) => {
+      await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
+      const previousData = queryClient.getQueryData(["participants", rideId]);
+      queryClient.setQueryData(["participants", rideId], (old) =>
+        old.map((p) => (p.id === participantId ? { ...p, status: "approved" } : p))
+      );
+      return previousData;
+    },
+    onError: (err, participantId, previousData) => {
+      if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+      toast({ title: "Failed to approve rider", variant: "destructive" });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["participants", rideId] });
-      queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
+      toast({ title: "Rider approved!" });
     },
   });
 
   const declineMutation = useMutation({
     mutationFn: (participantId) =>
       base44.entities.RideParticipant.update(participantId, { status: "declined" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["participants", rideId] }),
+    onMutate: async (participantId) => {
+      await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
+      const previousData = queryClient.getQueryData(["participants", rideId]);
+      queryClient.setQueryData(["participants", rideId], (old) =>
+        old.map((p) => (p.id === participantId ? { ...p, status: "declined" } : p))
+      );
+      return previousData;
+    },
+    onError: (err, participantId, previousData) => {
+      if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+      toast({ title: "Failed to decline rider", variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Rider declined!" });
+    },
   });
 
   const updateStatus = async (newStatus) => {

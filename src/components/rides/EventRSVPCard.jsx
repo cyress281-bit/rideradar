@@ -11,39 +11,54 @@ import { useToast } from "@/components/ui/use-toast";
 export default function EventRSVPCard({ event, user, myStatus, onStatusChange }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [optimisticStatus, setOptimisticStatus] = React.useState(myStatus);
 
   const formatIcon = {
     stationary: "📍",
     route: "🛣️",
   };
 
-  const handleRSVP = async (status) => {
-    if (!user) return;
-
-    const username = user.username || user.email?.split("@")[0] || "rider";
-    const existing = await base44.entities.RideParticipant.filter({
-      ride_id: event.id,
-      user_email: user.email,
-    });
-
-    if (existing.length > 0) {
-      await base44.entities.RideParticipant.update(existing[0].id, { status });
-    } else {
-      await base44.entities.RideParticipant.create({
+  const rsvpMutation = useMutation({
+    mutationFn: async (newStatus) => {
+      const username = user.username || user.email?.split("@")[0] || "rider";
+      const existing = await base44.entities.RideParticipant.filter({
         ride_id: event.id,
         user_email: user.email,
-        username,
-        status,
-        role: "rider",
       });
-    }
 
-    toast({
-      title: status === "approved" ? "RSVP confirmed!" : "RSVP cancelled",
-    });
+      if (existing.length > 0) {
+        await base44.entities.RideParticipant.update(existing[0].id, { status: newStatus });
+      } else {
+        await base44.entities.RideParticipant.create({
+          ride_id: event.id,
+          user_email: user.email,
+          username,
+          status: newStatus,
+          role: "rider",
+        });
+      }
+    },
+    onMutate: async (newStatus) => {
+      const previousStatus = optimisticStatus;
+      setOptimisticStatus(newStatus);
+      toast({
+        title: newStatus === "approved" ? "RSVP confirmed!" : "RSVP cancelled",
+      });
+      return previousStatus;
+    },
+    onError: (err, newStatus, previousStatus) => {
+      setOptimisticStatus(previousStatus);
+      toast({ title: "Failed to update RSVP", variant: "destructive" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-participations"] });
+      onStatusChange?.(optimisticStatus);
+    },
+  });
 
-    queryClient.invalidateQueries({ queryKey: ["my-participations"] });
-    onStatusChange?.(status);
+  const handleRSVP = (status) => {
+    if (!user) return;
+    rsvpMutation.mutate(status);
   };
 
   const statusColors = {
@@ -96,7 +111,7 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
       </div>
 
       {/* RSVP Actions */}
-      {!myStatus ? (
+      {!optimisticStatus ? (
         <div className="flex gap-2 pt-2">
           <Button
             onClick={() => handleRSVP("approved")}
