@@ -42,6 +42,7 @@ export default function LiveGrid() {
   const [selectedRide, setSelectedRide] = useState(null);
   const [myPosition, setMyPosition] = useState(null);
   const [checkedInRides, setCheckedInRides] = useState(new Set());
+  const [showOtherRiders, setShowOtherRiders] = useState(true);
   const locationRecordIds = useRef({}); // ride_id -> riderLocation record id
   const watchIdRef = useRef(null);
   const lastTrackPointTime = useRef({}); // ride_id -> timestamp of last recorded track point
