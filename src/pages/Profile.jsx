@@ -9,10 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX
+  Save, LogOut, UserX, Camera, Loader
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
+import MotorcycleModels from "@/components/profile/MotorcycleModels";
+import RideHistory from "@/components/profile/RideHistory";
 
 const vibeOptions = [
   { value: "chill", label: "Chill" },
