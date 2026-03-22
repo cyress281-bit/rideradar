@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTabNavigation } from "@/context/TabNavigationContext";
 import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { X, Clock, Users, Bike, MapPin, CheckCircle, UserPlus, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +19,10 @@ const vibeColors = {
 };
 
 export default function RideInfoPanel({ ride, participants, riderLocations, user, onClose }) {
-  const [joined, setJoined] = useState(false);
-  const [isHost, setIsHost] = useState(false);
-  const queryClient = useQueryClient();
+   const [joined, setJoined] = useState(false);
+   const [isHost, setIsHost] = useState(false);
+   const queryClient = useQueryClient();
+   const navigate = useNavigate();
 
   const approved = participants.filter((p) => p.status === "approved");
   const checkedIn = riderLocations.filter((l) => l.checked_in && l.ride_id === ride.id);
@@ -167,15 +169,15 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
           )}
 
           {/* View details */}
-          <Link
-            to={`/rides/${ride.id}`}
-            className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors ${
-              isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
-            }`}
-          >
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            {isHost ? "Manage Ride" : "Details"}
-          </Link>
+            <button
+              onClick={() => navigate(`/rides/${ride.id}`)}
+              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors ${
+                isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
+              }`}
+            >
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              {isHost ? "Manage Ride" : "Details"}
+            </button>
         </div>
       </div>
     </motion.div>
