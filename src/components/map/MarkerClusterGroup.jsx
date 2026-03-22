@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 
 // Simple clustering implementation for mobile performance
-export default function MarkerClusterGroup({ markers, maxZoom = 18 }) {
+const MarkerClusterGroup = memo(function MarkerClusterGroup({ markers, maxZoom = 18 }) {
   const map = useMap();
   const clustersRef = useRef({});
   const clusterLayersRef = useRef([]);
@@ -80,4 +80,6 @@ export default function MarkerClusterGroup({ markers, maxZoom = 18 }) {
   }, [markers, map]);
 
   return null;
-}
+  });
+
+  export default MarkerClusterGroup;

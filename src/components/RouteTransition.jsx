@@ -7,6 +7,7 @@ export default function RouteTransition({ children }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
+      style={{ willChange: 'transform' }}
     >
       {children}
     </motion.div>
