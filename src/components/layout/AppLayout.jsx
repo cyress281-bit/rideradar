@@ -12,9 +12,9 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background font-inter">
+    <div className="min-h-screen bg-background font-inter" style={{ overscrollBehavior: 'none' }}>
       <RideNowAlert user={user} />
-      <main className="pb-20">
+      <main className="pb-20" style={{ overscrollBehavior: 'none' }}>
         <Outlet />
       </main>
       <BottomNav />

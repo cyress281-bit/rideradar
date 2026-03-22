@@ -85,6 +85,11 @@
 
   body {
     @apply bg-background text-foreground font-inter;
+    overscroll-behavior: none;
+  }
+
+  button, [role="button"], a {
+    @apply user-select-none;
   }
 
   h1 {
