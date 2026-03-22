@@ -190,7 +190,7 @@ export default function CreateRide() {
         </div>
 
         <div>
-          <Label className="text-xs text-muted-foreground mb-2">Requirements (optional)</Label>
+          <Label className="text-xs text-muted-foreground mb-2">Requirements (preferred, optional)</Label>
           <Textarea
             placeholder="e.g. Full gear, Cardo comms, etc."
             value={form.requirements}
