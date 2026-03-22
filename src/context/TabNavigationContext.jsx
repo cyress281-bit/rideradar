@@ -143,7 +143,7 @@ export function TabNavigationProvider({ children }) {
   }, [getCurrentTab]);
 
   return (
-    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab, scrollPositionsRef }}>
+    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab, scrollPositionsRef, componentStateRef }}>
       {children}
     </TabNavigationContext.Provider>
   );
