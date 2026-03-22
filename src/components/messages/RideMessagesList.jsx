@@ -14,9 +14,12 @@ const tagStyles = {
 
 function RideThreadRow({ index, style, data }) {
   const thread = data[index];
+  const rowStyle = style?.top === undefined
+    ? style
+    : { ...style, top: style.top + 4, height: style.height - 8 };
 
   return (
-    <div style={{ ...style, top: style.top + 4, height: style.height - 8 }}>
+    <div style={rowStyle}>
       <Link
         to={`/rides/${thread.rideId}`}
         className="block p-3 rounded-xl bg-secondary/40 border border-border/50 hover:bg-secondary/60 transition-colors"
