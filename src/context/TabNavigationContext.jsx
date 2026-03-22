@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useRef, useEffect } from "react";
+import React, { createContext, useContext, useCallback, useRef, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useNavigationDirection } from "./NavigationDirectionContext";
 
@@ -15,9 +15,10 @@ const TAB_ROOT_PATHS = {
 export function TabNavigationProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setDirection } = useNavigationDirection();
+  const { direction } = useNavigationDirection();
+  const [, setTabState] = useState(0); // Force re-render on tab switch
   
-  // Initialize and maintain strict tab stacks
+  // Persistent tab stacks survive component remounts
   const stacksRef = useRef({
     home: ["/"],
     grid: ["/grid"],
@@ -34,8 +35,14 @@ export function TabNavigationProvider({ children }) {
     profile: 0,
   });
   
-  // Keep navigation direction separate; tab stacks always sync from the real router location.
-  const popStateFrameRef = useRef(null);
+  // Component state cache to preserve component instances per tab
+  const componentStateRef = useRef({
+    home: null,
+    grid: null,
+    rides: null,
+    messages: null,
+    profile: null,
+  });
 
   const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
