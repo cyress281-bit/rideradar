@@ -21,6 +21,13 @@ export function TabNavigationProvider({ children }) {
     messages: ["/messages"],
     profile: ["/profile"],
   });
+  const scrollPositionsRef = useRef({
+    home: 0,
+    grid: 0,
+    rides: 0,
+    messages: 0,
+    profile: 0,
+  });
   const lastNavigationTimeRef = useRef(0);
 
   const getCurrentTab = useCallback(() => {
@@ -67,6 +74,16 @@ export function TabNavigationProvider({ children }) {
 
   const switchTab = useCallback(
     (tabName) => {
+      const currentTab = getCurrentTab();
+      
+      // Save current scroll position before switching
+      if (currentTab) {
+        const mainElement = document.querySelector('main');
+        if (mainElement) {
+          scrollPositionsRef.current[currentTab] = mainElement.scrollTop;
+        }
+      }
+
       const stacks = stacksRef.current;
       const stack = stacks[tabName];
       if (!stack || stack.length === 0) return;
@@ -77,8 +94,16 @@ export function TabNavigationProvider({ children }) {
       // Use React Router's navigate with replace=false for standard history behavior
       navigate(targetPath, { replace: false });
       lastNavigationTimeRef.current = Date.now();
+
+      // Restore scroll position after navigation completes
+      requestAnimationFrame(() => {
+        const mainElement = document.querySelector('main');
+        if (mainElement) {
+          mainElement.scrollTop = scrollPositionsRef.current[tabName] || 0;
+        }
+      });
     },
-    [navigate, location.pathname]
+    [navigate, location.pathname, getCurrentTab]
   );
 
   const goBack = useCallback(() => {
@@ -125,8 +150,24 @@ export function TabNavigationProvider({ children }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [getCurrentTab]);
 
+  // Save scroll position when main element scrolls
+  useEffect(() => {
+    const mainElement = document.querySelector('main');
+    if (!mainElement) return;
+
+    const handleScroll = () => {
+      const currentTab = getCurrentTab();
+      if (currentTab) {
+        scrollPositionsRef.current[currentTab] = mainElement.scrollTop;
+      }
+    };
+
+    mainElement.addEventListener('scroll', handleScroll, { passive: true });
+    return () => mainElement.removeEventListener('scroll', handleScroll);
+  }, [getCurrentTab]);
+
   return (
-    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab }}>
+    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab, scrollPositionsRef }}>
       {children}
     </TabNavigationContext.Provider>
   );
