@@ -40,8 +40,6 @@ export default function CreateRide() {
     start_time: "",
     duration_minutes: "60",
     vibe: "",
-    bike_class: "any",
-    max_riders: "",
     requirements: "",
     meetup_address: "",
   });
