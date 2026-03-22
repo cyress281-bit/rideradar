@@ -48,26 +48,7 @@ export default function Rides() {
   });
 
   return (
-     <div
-       ref={scrollContainerRef}
-       className="min-h-screen pb-24 relative"
-       style={{ overscrollBehavior: 'none' }}
-       {...handlers}
-     >
-      {/* Pull-to-refresh indicator */}
-      {progress > 0 && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full"
-            style={{
-              rotate: progress * 360,
-              opacity: progress,
-            }}
-          />
-        </div>
-      )}
+     <div className="min-h-screen pb-24 relative" style={{ overscrollBehavior: 'none' }}>
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-lg font-bold">Rides</h1>
         <p className="text-xs text-muted-foreground">Browse or manage your rides</p>
