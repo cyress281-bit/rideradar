@@ -1,37 +1,41 @@
 import { useState, useRef } from "react";
 
 export function usePullToRefresh(onRefresh) {
-  const [pullRefresh, setPullRefresh] = useState(0);
-  const touchStartY = useRef(0);
   const scrollContainerRef = useRef(null);
+  const [progress, setProgress] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
 
-  const handlePullRefresh = (e) => {
-    if (scrollContainerRef.current?.scrollTop === 0) {
-      const deltaY = e.touches[0].clientY - touchStartY.current;
-      if (deltaY > 0) {
-        setPullRefresh(Math.min(deltaY / 100, 1));
+  const handlers = {
+    onTouchStart(e) {
+      if (scrollContainerRef.current?.scrollTop === 0 && !isRefreshing) {
+        touchStartY.current = e.touches[0].clientY;
       }
-    }
-  };
+    },
 
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
+    onTouchMove(e) {
+      if (isRefreshing) return;
+      
+      const currentY = e.touches[0].clientY;
+      const scrollTop = scrollContainerRef.current?.scrollTop || 0;
 
-  const handleTouchEnd = async () => {
-    if (pullRefresh > 0.5) {
-      await onRefresh();
-    }
-    setPullRefresh(0);
-  };
+      if (scrollTop === 0 && currentY > touchStartY.current) {
+        const distance = currentY - touchStartY.current;
+        const calculatedProgress = Math.min(distance / 60, 1);
+        setProgress(calculatedProgress);
+      }
+    },
 
-  return {
-    scrollContainerRef,
-    pullRefresh,
-    handlers: {
-      onTouchStart: handleTouchStart,
-      onTouchMove: handlePullRefresh,
-      onTouchEnd: handleTouchEnd,
+    async onTouchEnd() {
+      if (progress >= 1 && !isRefreshing) {
+        setIsRefreshing(true);
+        await onRefresh();
+        setIsRefreshing(false);
+      }
+      setProgress(0);
+      touchStartY.current = 0;
     },
   };
+
+  return { scrollContainerRef, progress, isRefreshing, handlers };
 }
