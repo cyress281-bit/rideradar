@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
+import { deleteUserAccount } from "@/functions/deleteUserAccount";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import SelectDrawer from "@/components/SelectDrawer";
+import DeleteAccountDialogs from "@/components/profile/DeleteAccountDialogs";
 import {
   User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX, Camera, Loader, AlertTriangle
+  Save, LogOut, UserX, Camera, Loader
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
@@ -43,8 +44,7 @@ export default function Profile() {
     invisible_mode: false,
   });
   const [uploading, setUploading] = useState(false);
-  const [deleteStep, setDeleteStep] = useState(0); // 0 = closed, 1 = warning, 2 = confirm
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then((u) => {
@@ -112,19 +112,21 @@ export default function Profile() {
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (confirmationText) => {
+    setIsDeletingAccount(true);
     try {
-      await base44.functions.invoke("deleteUserAccount", {});
+      await deleteUserAccount({
+        confirmationText,
+        finalConfirmation: true,
+      });
       toast({ title: "Account deleted successfully" });
-      setDeleteStep(0);
-      setDeleteConfirmText("");
       setTimeout(() => base44.auth.logout(), 1000);
     } catch (err) {
       toast({ title: "Deletion failed", variant: "destructive" });
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
-
-  const canConfirmDeletion = deleteConfirmText.toLowerCase() === "permanently delete";
 
   return (
     <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none', overflowX: 'hidden' }}>
@@ -317,117 +319,10 @@ export default function Profile() {
           Sign Out
         </Button>
 
-        <Button
-          variant="ghost"
-          className="w-full text-destructive hover:bg-destructive/10 select-none"
-          onClick={() => setDeleteStep(1)}
-        >
-          <UserX className="w-4 h-4 mr-2" />
-          Delete Account
-        </Button>
-
-        {/* Two-Step Account Deletion Dialog */}
-        {deleteStep > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 p-4"
-            onClick={() => {
-              setDeleteStep(0);
-              setDeleteConfirmText("");
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-card border border-border rounded-xl p-6 max-w-sm w-full space-y-4"
-            >
-              {deleteStep === 1 ? (
-                <>
-                  {/* Step 1: Warning */}
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h3 className="font-bold text-base">Delete Account?</h3>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        This action <span className="font-semibold">cannot be undone</span>. The following will be permanently deleted:
-                      </p>
-                      <ul className="text-xs text-muted-foreground mt-2 space-y-1 ml-3">
-                        <li>• Your profile and avatar</li>
-                        <li>• All ride history and ratings</li>
-                        <li>• All messages and conversations</li>
-                        <li>• Your account records</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1 select-none"
-                      onClick={() => {
-                        setDeleteStep(0);
-                        setDeleteConfirmText("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="flex-1 select-none"
-                      onClick={() => setDeleteStep(2)}
-                    >
-                      Continue
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Step 2: Confirmation */}
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <h3 className="font-bold text-base">Final Confirmation</h3>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Type <span className="font-mono font-semibold">permanently delete</span> to confirm the deletion of your account and all associated data:
-                      </p>
-                    </div>
-                  </div>
-
-                  <Input
-                    placeholder="Type 'permanently delete'"
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    className="bg-secondary border-border text-sm"
-                  />
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1 select-none"
-                      onClick={() => {
-                        setDeleteStep(1);
-                        setDeleteConfirmText("");
-                      }}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="flex-1 select-none"
-                      disabled={!canConfirmDeletion}
-                      onClick={handleDeleteAccount}
-                    >
-                      Delete Account
-                    </Button>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
+        <DeleteAccountDialogs
+          onConfirmDelete={handleDeleteAccount}
+          isDeleting={isDeletingAccount}
+        />
       </div>
     </div>
   );

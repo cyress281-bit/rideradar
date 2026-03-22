@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { rafThrottle } from "@/lib/throttle";
-import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
-// Lazy-load map components for code splitting (heavy with Leaflet dependencies)
-const MeetupPin = lazy(() => import("@/components/map/MeetupPin"));
-const ActiveRiderDot = lazy(() => import("@/components/map/ActiveRiderDot"));
-const ActiveRidePin = lazy(() => import("@/components/map/ActiveRidePin"));
+const LiveGridMap = lazy(() => import("@/components/map/LiveGridMap"));
 const RideInfoPanel = lazy(() => import("@/components/map/RideInfoPanel"));
-const RideRoutePolyline = lazy(() => import("@/components/map/RideRoutePolyline"));
-const MarkerClusterGroup = lazy(() => import("@/components/map/MarkerClusterGroup"));
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
@@ -28,19 +21,6 @@ function getDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Recenter map when rides load
-function MapAutoCenter({ rides }) {
-  const map = useMap();
-  const centered = useRef(false);
-  useEffect(() => {
-    if (!centered.current && rides.length > 0) {
-      map.setView([rides[0].meetup_lat, rides[0].meetup_lng], 12, { animate: true });
-      centered.current = true;
-    }
-  }, [rides, map]);
-  return null;
-}
-
 export default function LiveGrid() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -48,6 +28,7 @@ export default function LiveGrid() {
   const [myPosition, setMyPosition] = useState(null);
   const [checkedInRides, setCheckedInRides] = useState(new Set());
   const [showOtherRiders, setShowOtherRiders] = useState(true);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const locationRecordIds = useRef({}); // ride_id -> riderLocation record id
   const watchIdRef = useRef(null);
   const lastTrackPointTime = useRef({}); // ride_id -> timestamp of last recorded track point
@@ -55,6 +36,28 @@ export default function LiveGrid() {
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadMap = () => {
+      if (!isCancelled) setShouldLoadMap(true);
+    };
+
+    if (window.requestIdleCallback) {
+      const idleId = window.requestIdleCallback(loadMap, { timeout: 300 });
+      return () => {
+        isCancelled = true;
+        window.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(loadMap, 120);
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   // Fetch active/meetup rides
@@ -251,60 +254,38 @@ export default function LiveGrid() {
 
   return (
     <div className="h-[calc(100vh-80px)] relative overflow-hidden" style={{ overscrollBehavior: 'none' }}>
-      <MapContainer
-        center={[34.05, -118.25]}
-        zoom={11}
-        className="h-full w-full"
-        zoomControl={false}
-        attributionControl={false}
-      >
-        <TileLayer {...mapTileLayerProps} />
-        <MapAutoCenter rides={rides} />
-        <Suspense fallback={null}>
-          <MarkerClusterGroup markers={clusterMarkers} />
-
-          {/* Meetup pins */}
-          {meetupRides.map((ride) => (
-            <MeetupPin
-              key={ride.id}
-              ride={ride}
-              participants={allParticipants.filter((p) => p.ride_id === ride.id)}
-              onClick={() => setSelectedRide(ride)}
-            />
-          ))}
-
-          {/* Active ride route polylines */}
-          {activeRides.map((ride) => (
-            <RideRoutePolyline
-              key={`route-${ride.id}`}
-              trackPoints={trackPoints.filter((tp) => tp.ride_id === ride.id)}
-              rideStatus={ride.status}
-            />
-          ))}
-
-          {/* Active ride pins (tappable) */}
-          {activeRides.map((ride) => (
-            <ActiveRidePin
-              key={`pin-${ride.id}`}
-              ride={ride}
-              onClick={() => setSelectedRide(ride)}
-            />
-          ))}
-
-          {/* Active ride: show live rider dots */}
-          {showOtherRiders && activeRides.map((ride) =>
-            riderLocations
-              .filter((l) => l.ride_id === ride.id && l.is_active)
-              .map((loc) => (
-                <ActiveRiderDot
-                  key={loc.id}
-                  location={loc}
-                  isCurrentUser={loc.user_email === user?.email}
-                />
-              ))
-          )}
+      {shouldLoadMap ? (
+        <Suspense
+          fallback={
+            <div className="flex h-full w-full items-center justify-center bg-background/70">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                <p className="text-xs text-muted-foreground">Loading live radar…</p>
+              </div>
+            </div>
+          }
+        >
+          <LiveGridMap
+            rides={rides}
+            clusterMarkers={clusterMarkers}
+            meetupRides={meetupRides}
+            activeRides={activeRides}
+            allParticipants={allParticipants}
+            trackPoints={trackPoints}
+            riderLocations={riderLocations}
+            showOtherRiders={showOtherRiders}
+            user={user}
+            onSelectRide={setSelectedRide}
+          />
         </Suspense>
-      </MapContainer>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-background/70">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+            <p className="text-xs text-muted-foreground">Preparing map…</p>
+          </div>
+        </div>
+      )}
 
       {/* HUD Top Bar */}
       <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center justify-between gap-3 pointer-events-none">

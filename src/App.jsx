@@ -12,6 +12,7 @@ import { TabNavigationProvider } from '@/context/TabNavigationContext';
 import { NavigationDirectionProvider } from '@/context/NavigationDirectionContext';
 
 import AppLayout from './components/layout/AppLayout';
+import SystemAppearanceSync from '@/components/system/SystemAppearanceSync';
 const Home = lazy(() => import('./pages/Home'));
 const LiveGrid = lazy(() => import('./pages/LiveGrid'));
 const Rides = lazy(() => import('./pages/Rides'));
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
+      <SystemAppearanceSync />
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <NavigationDirectionProvider>
