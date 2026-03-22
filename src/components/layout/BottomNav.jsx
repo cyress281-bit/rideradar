@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useTabNavigation } from "@/context/TabNavigationContext";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { id: "home", path: "/", icon: Home, label: "Home" },
@@ -43,7 +44,10 @@ export default function BottomNav() {
             <button
               key={item.id}
               onClick={() => switchTab(item.id)}
-              className="flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px]"
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px] rounded-lg transition-colors",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              )}
               aria-label={`${item.label} tab`}
               aria-current={isActive ? "page" : undefined}
             >
