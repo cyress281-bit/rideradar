@@ -70,7 +70,7 @@ export default function RideDetails() {
         ride_id: rideId,
         user_email: user.email,
         username,
-        status: "requested",
+        status: "approved",
         role: "rider",
       });
     },
