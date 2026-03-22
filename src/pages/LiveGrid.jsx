@@ -275,6 +275,7 @@ export default function LiveGrid() {
             riderLocations={riderLocations}
             showOtherRiders={showOtherRiders}
             user={user}
+            userPosition={myPosition}
             onSelectRide={setSelectedRide}
           />
         </Suspense>

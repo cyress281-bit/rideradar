@@ -32,6 +32,7 @@ export default function LiveGridMap({
   riderLocations,
   showOtherRiders,
   user,
+  userPosition,
   onSelectRide,
 }) {
   return (
@@ -54,6 +55,7 @@ export default function LiveGridMap({
             ride={ride}
             participants={allParticipants.filter((p) => p.ride_id === ride.id)}
             onClick={() => onSelectRide(ride)}
+            userPosition={userPosition}
           />
         ))}
 
@@ -70,6 +72,7 @@ export default function LiveGridMap({
             key={`pin-${ride.id}`}
             ride={ride}
             onClick={() => onSelectRide(ride)}
+            userPosition={userPosition}
           />
         ))}
 

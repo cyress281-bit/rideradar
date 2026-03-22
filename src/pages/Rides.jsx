@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import RideCard from "../components/rides/RideCard";
+import VirtualizedRideList from "../components/rides/VirtualizedRideList";
 import EventCalendar from "../components/rides/EventCalendar";
 import EventRSVPCard from "../components/rides/EventRSVPCard";
 
@@ -92,13 +92,7 @@ export default function Rides() {
         </TabsList>
 
         <TabsContent value="active">
-          {activeRides.length === 0 ? (
-            <EmptyState text="No active rides right now" />
-          ) : (
-            <div className="space-y-3">
-              {activeRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
-            </div>
-          )}
+          <VirtualizedRideList rides={activeRides} emptyText="No active rides right now" />
         </TabsContent>
 
         <TabsContent value="events">
@@ -129,23 +123,11 @@ export default function Rides() {
         </TabsContent>
 
         <TabsContent value="mine">
-          {myRides.length === 0 ? (
-            <EmptyState text="You haven't joined any rides yet" />
-          ) : (
-            <div className="space-y-3">
-              {myRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
-            </div>
-          )}
+          <VirtualizedRideList rides={myRides} emptyText="You haven't joined any rides yet" />
         </TabsContent>
 
         <TabsContent value="past">
-          {pastRides.length === 0 ? (
-            <EmptyState text="No past rides" />
-          ) : (
-            <div className="space-y-3">
-              {pastRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
-            </div>
-          )}
+          <VirtualizedRideList rides={pastRides} emptyText="No past rides" />
         </TabsContent>
       </Tabs>
       </div>
