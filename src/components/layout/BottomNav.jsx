@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Home, Map, Navigation, User, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useTabNavigation } from "@/context/TabNavigationContext";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Home" },
-  { path: "/grid", icon: Map, label: "Live Radar" },
-  { path: "/rides", icon: Navigation, label: "Rides" },
-  { path: "/messages", icon: MessageCircle, label: "Messages", badge: "unreadCount" },
-  { path: "/profile", icon: User, label: "Profile" },
+  { id: "home", path: "/", icon: Home, label: "Home" },
+  { id: "grid", path: "/grid", icon: Map, label: "Live Radar" },
+  { id: "rides", path: "/rides", icon: Navigation, label: "Rides" },
+  { id: "messages", path: "/messages", icon: MessageCircle, label: "Messages", badge: "unreadCount" },
+  { id: "profile", path: "/profile", icon: User, label: "Profile" },
 ];
 
 export default function BottomNav() {
   const location = useLocation();
+  const { switchTab, getCurrentTab } = useTabNavigation();
   const [user, setUser] = useState(null);
+  const currentTab = getCurrentTab();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -35,11 +38,11 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border select-none" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = currentTab === item.id;
           return (
-            <Link
-              key={item.path}
-              to={item.path}
+            <button
+              key={item.id}
+              onClick={() => switchTab(item.id)}
               className="flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px]"
               aria-label={item.label}
             >
@@ -68,7 +71,7 @@ export default function BottomNav() {
               >
                 {item.label}
               </span>
-            </Link>
+            </button>
           );
         })}
       </div>

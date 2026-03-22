@@ -119,16 +119,7 @@ export default function CreateRide() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <h1 className="text-lg font-bold">Create Ride</h1>
-      </div>
+
 
       <form onSubmit={handleSubmit} className="px-5 space-y-5">
         {/* Map picker */}

@@ -142,17 +142,7 @@ export default function RideDetails() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <h1 className="text-lg font-bold truncate">{ride.title}</h1>
-      </div>
+      {/* Header removed - TopHeader component handles it */}
 
       {/* Map */}
       <div className="px-5 mb-4">

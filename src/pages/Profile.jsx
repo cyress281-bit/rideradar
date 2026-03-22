@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import SelectDrawer from "@/components/SelectDrawer";
 import {
   User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX, Camera, Loader, AlertTriangle, ArrowLeft
+  Save, LogOut, UserX, Camera, Loader, AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
@@ -114,9 +114,8 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     try {
-      // Delete account via backend (would need implementation)
-      // For now, just logout as placeholder
-      toast({ title: "Account deletion initiated" });
+      await base44.functions.invoke("deleteUserAccount", {});
+      toast({ title: "Account deleted successfully" });
       setShowDeleteConfirm(false);
       setTimeout(() => base44.auth.logout(), 1000);
     } catch (err) {
@@ -126,18 +125,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-        <Link
-          to="/"
-          className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <h1 className="text-lg font-bold">Profile</h1>
-      </div>
-
-
       <div className="px-5 space-y-6">
         {/* Avatar area with upload */}
         <motion.div

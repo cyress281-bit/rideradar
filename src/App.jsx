@@ -7,6 +7,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import RouteTransition from '@/components/RouteTransition';
+import { TabNavigationProvider } from '@/context/TabNavigationContext';
 
 import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
@@ -63,7 +64,9 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AuthenticatedApp />
+          <TabNavigationProvider>
+            <AuthenticatedApp />
+          </TabNavigationProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>

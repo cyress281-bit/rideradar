@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -143,19 +143,6 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {selectedContact && (
-        <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
-          <button
-            onClick={() => setSelectedContact(null)}
-            className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <h1 className="text-lg font-bold">Messages</h1>
-        </div>
-      )}
-
       {/* Header */}
       {!selectedContact && (
       <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">

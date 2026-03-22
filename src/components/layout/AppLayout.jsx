@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
+import TopHeader from "@/components/TopHeader";
 import RideNowAlert from "@/components/home/RideNowAlert";
 import { base44 } from "@/api/base44Client";
 
@@ -14,6 +15,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background font-inter" style={{ overscrollBehavior: 'none' }}>
       <RideNowAlert user={user} />
+      <TopHeader />
       <main className="pb-20" style={{ overscrollBehavior: 'none' }}>
         <Outlet />
       </main>
