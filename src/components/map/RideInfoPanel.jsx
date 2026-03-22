@@ -17,8 +17,8 @@ const vibeColors = {
 
 export default function RideInfoPanel({ ride, participants, riderLocations, user, onClose }) {
   const [joined, setJoined] = useState(false);
-  const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const queryClient = useQueryClient();
 
   const approved = participants.filter((p) => p.status === "approved");
   const checkedIn = riderLocations.filter((l) => l.checked_in && l.ride_id === ride.id);
@@ -34,21 +34,34 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       .catch(() => {});
   }, [user, ride.id, ride.host_email]);
 
+  const joinMutation = useMutationWithOptimism(
+    async () => {
+      if (!user) return;
+      const username = user.username || user.email?.split("@")[0] || "rider";
+      await base44.entities.RideParticipant.create({
+        ride_id: ride.id,
+        user_email: user.email,
+        username,
+        status: "approved",
+        role: "rider",
+      });
+      await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
+    },
+    {
+      onMutate: () => {
+        setJoined(true);
+      },
+      onError: () => {
+        setJoined(false);
+      },
+      successMessage: "You joined the ride!",
+    }
+  );
+
   const handleJoin = async (e) => {
     e.preventDefault();
-    if (!user || joining || joined || isHost) return;
-    setJoining(true);
-    const username = user.username || user.email?.split("@")[0] || "rider";
-    await base44.entities.RideParticipant.create({
-      ride_id: ride.id,
-      user_email: user.email,
-      username,
-      status: "approved",
-      role: "rider",
-    });
-    await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
-    setJoined(true);
-    setJoining(false);
+    if (!user || joined || isHost) return;
+    joinMutation.mutate();
   };
 
   return (
@@ -134,7 +147,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
           {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
             <button
               onClick={handleJoin}
-              disabled={joining || joined}
+              disabled={joinMutation.isPending || joined}
               className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all ${
                 joined
                   ? "bg-green-500/15 text-green-400 border-green-500/20 flex-1"
@@ -143,7 +156,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
             >
               {joined ? (
                 <><Check className="w-4 h-4" /> You're In!</>
-              ) : joining ? (
+              ) : joinMutation.isPending ? (
                 "Joining..."
               ) : (
                 <><UserPlus className="w-4 h-4" /> Quick Join</>
