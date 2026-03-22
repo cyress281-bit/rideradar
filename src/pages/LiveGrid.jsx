@@ -290,7 +290,7 @@ export default function LiveGrid() {
           </div>
         </div>
 
-        {/* Right: Stats */}
+        {/* Right: Stats & Toggle */}
         <div className="flex flex-col gap-1.5 items-end pointer-events-auto">
           <div className="bg-card/90 backdrop-blur-xl rounded-xl px-3 py-2 border border-border flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -300,8 +300,20 @@ export default function LiveGrid() {
             <span className="text-xs font-semibold text-foreground">{rides.length} on radar</span>
           </div>
           {activeRides.length > 0 && (
-            <div className="bg-primary/10 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-primary/30">
-              <span className="text-[10px] font-bold text-primary">{activeRides.length} LIVE</span>
+            <div className="flex gap-2">
+              <div className="bg-primary/10 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-primary/30">
+                <span className="text-[10px] font-bold text-primary">{activeRides.length} LIVE</span>
+              </div>
+              <button
+                onClick={() => setShowOtherRiders(!showOtherRiders)}
+                className={`backdrop-blur-xl rounded-xl px-3 py-1.5 border transition-all text-[10px] font-bold ${
+                  showOtherRiders
+                    ? "bg-green-500/10 border-green-500/30 text-green-400"
+                    : "bg-card/90 border-border text-muted-foreground"
+                }`}
+              >
+                {showOtherRiders ? "👁️ Tracking" : "👁️ Hidden"}
+              </button>
             </div>
           )}
         </div>
