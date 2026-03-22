@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Users, Clock, Zap, MapPin } from "lucide-react";
+import { Users, Clock, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatDistanceToNow, isPast } from "date-fns";
 
