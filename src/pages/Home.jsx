@@ -15,7 +15,7 @@ export default function Home() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: rides = [], refetch: refetchRides } = useQuery({
+  const { data: rides = [] } = useQuery({
     queryKey: ["rides-home"],
     queryFn: () => base44.entities.Ride.filter(
       { status: { $in: ["meetup", "active"] } },
@@ -23,8 +23,6 @@ export default function Home() {
       50
     ),
   });
-
-  const { scrollContainerRef, progress, isRefreshing, handlers } = usePullToRefresh(() => refetchRides());
 
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
