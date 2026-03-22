@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const TabNavigationContext = createContext();
 
-// Root paths for each tab - only hide back button on these
 const TAB_ROOT_PATHS = {
   home: "/",
   grid: "/grid",
@@ -41,11 +40,36 @@ export function TabNavigationProvider({ children }) {
     return location.pathname === TAB_ROOT_PATHS[tab];
   }, [getCurrentTab, location.pathname]);
 
+  // Verify stack integrity and sync with history
+  const syncStackWithHistory = useCallback((tab, path) => {
+    const stacks = stacksRef.current;
+    const stack = stacks[tab];
+    
+    // Ensure path is in correct tab
+    const isPathInTab = (() => {
+      if (tab === "home") return path === "/";
+      if (tab === "grid") return path.startsWith("/grid");
+      if (tab === "rides") return path.startsWith("/rides");
+      if (tab === "messages") return path.startsWith("/messages");
+      if (tab === "profile") return path.startsWith("/profile");
+      if (tab === "rides" && path === "/create-ride") return true;
+      return false;
+    })();
+
+    if (!isPathInTab) return;
+
+    // Reconstruct stack if last item doesn't match current path
+    if (stack[stack.length - 1] !== path) {
+      stack.push(path);
+    }
+  }, []);
+
   const switchTab = useCallback((tabName) => {
     const stacks = stacksRef.current;
     const stack = stacks[tabName];
     if (stack && stack.length > 0) {
       const targetPath = stack[stack.length - 1];
+      window.history.pushState({ tab: tabName, path: targetPath }, "", targetPath);
       navigate(targetPath);
     }
   }, [navigate]);
@@ -60,54 +84,34 @@ export function TabNavigationProvider({ children }) {
     if (stack.length > 1) {
       stack.pop();
       isPopstateRef.current = true;
-      navigate(-1);
+      window.history.back();
     }
-  }, [getCurrentTab, navigate]);
+  }, [getCurrentTab]);
 
-  // Sync stack on location change - handle nested routes
+  // Sync stack on location change
   useEffect(() => {
     const tab = getCurrentTab();
     if (!tab) return;
-
-    const stacks = stacksRef.current;
-    const stack = stacks[tab];
-    const currentPath = location.pathname;
 
     if (isPopstateRef.current) {
       isPopstateRef.current = false;
       return;
     }
 
-    // Verify stack integrity - stack should only contain paths within the current tab
-    const isPathInTab = (() => {
-      if (tab === "home") return currentPath === "/";
-      if (tab === "grid") return currentPath.startsWith("/grid");
-      if (tab === "rides") return currentPath.startsWith("/rides");
-      if (tab === "messages") return currentPath.startsWith("/messages");
-      if (tab === "profile") return currentPath.startsWith("/profile");
-      if (tab === "rides" && currentPath === "/create-ride") return true;
-      return false;
-    })();
+    syncStackWithHistory(tab, location.pathname);
+  }, [location.pathname, getCurrentTab, syncStackWithHistory]);
 
-    if (!isPathInTab) return;
-
-    // Add new path to stack if not already the last item
-    if (stack[stack.length - 1] !== currentPath) {
-      stack.push(currentPath);
-    }
-  }, [location.pathname, getCurrentTab]);
-
-  // Handle native iOS back swipe and browser back button
+  // Handle popstate to keep stacks synchronized
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (e) => {
       const tab = getCurrentTab();
-      if (tab) {
-        const stacks = stacksRef.current;
-        const stack = stacks[tab];
-        // Pop the current path since navigation already happened
-        if (stack.length > 1) {
-          stack.pop();
-        }
+      if (!tab) return;
+
+      const stacks = stacksRef.current;
+      const stack = stacks[tab];
+      
+      if (stack.length > 1) {
+        stack.pop();
       }
     };
 

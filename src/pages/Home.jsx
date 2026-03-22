@@ -25,7 +25,7 @@ export default function Home() {
     ),
   });
 
-  const { scrollContainerRef, handlers } = usePullToRefresh(() => refetchRides());
+  const { scrollContainerRef, progress, isRefreshing, handlers } = usePullToRefresh(() => refetchRides());
 
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
@@ -37,9 +37,23 @@ export default function Home() {
   return (
     <div
       ref={scrollContainerRef}
-      className="min-h-screen"
+      className="min-h-screen relative"
       {...handlers}
     >
+      {/* Pull-to-refresh indicator */}
+      {progress > 0 && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full"
+            style={{
+              rotate: progress * 360,
+              opacity: progress,
+            }}
+          />
+        </div>
+      )}
       <HomeHeader username={user?.username} />
       <StatsBar
         totalRiders={totalRiders}

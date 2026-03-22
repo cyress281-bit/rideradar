@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { lazy, Suspense } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -10,13 +11,24 @@ import RouteTransition from '@/components/RouteTransition';
 import { TabNavigationProvider } from '@/context/TabNavigationContext';
 
 import AppLayout from './components/layout/AppLayout';
-import Home from './pages/Home';
-import LiveGrid from './pages/LiveGrid';
-import Rides from './pages/Rides';
-import RideDetails from './pages/RideDetails';
-import CreateRide from './pages/CreateRide';
-import Profile from './pages/Profile';
-import Messages from './pages/Messages';
+const Home = lazy(() => import('./pages/Home'));
+const LiveGrid = lazy(() => import('./pages/LiveGrid'));
+const Rides = lazy(() => import('./pages/Rides'));
+const RideDetails = lazy(() => import('./pages/RideDetails'));
+const CreateRide = lazy(() => import('./pages/CreateRide'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Messages = lazy(() => import('./pages/Messages'));
+
+const PageLoader = () => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="flex items-center justify-center h-screen"
+  >
+    <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+  </motion.div>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,13 +57,13 @@ const AuthenticatedApp = () => {
     <AnimatePresence mode="wait">
       <Routes>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<RouteTransition><Home /></RouteTransition>} />
-          <Route path="/grid" element={<RouteTransition><LiveGrid /></RouteTransition>} />
-          <Route path="/rides" element={<RouteTransition><Rides /></RouteTransition>} />
-          <Route path="/rides/:rideId" element={<RouteTransition><RideDetails /></RouteTransition>} />
-          <Route path="/create-ride" element={<RouteTransition><CreateRide /></RouteTransition>} />
-          <Route path="/profile" element={<RouteTransition><Profile /></RouteTransition>} />
-          <Route path="/messages" element={<RouteTransition><Messages /></RouteTransition>} />
+          <Route path="/" element={<Suspense fallback={<PageLoader />}><RouteTransition><Home /></RouteTransition></Suspense>} />
+          <Route path="/grid" element={<Suspense fallback={<PageLoader />}><RouteTransition><LiveGrid /></RouteTransition></Suspense>} />
+          <Route path="/rides" element={<Suspense fallback={<PageLoader />}><RouteTransition><Rides /></RouteTransition></Suspense>} />
+          <Route path="/rides/:rideId" element={<Suspense fallback={<PageLoader />}><RouteTransition><RideDetails /></RouteTransition></Suspense>} />
+          <Route path="/create-ride" element={<Suspense fallback={<PageLoader />}><RouteTransition><CreateRide /></RouteTransition></Suspense>} />
+          <Route path="/profile" element={<Suspense fallback={<PageLoader />}><RouteTransition><Profile /></RouteTransition></Suspense>} />
+          <Route path="/messages" element={<Suspense fallback={<PageLoader />}><RouteTransition><Messages /></RouteTransition></Suspense>} />
         </Route>
         <Route path="*" element={<RouteTransition><PageNotFound /></RouteTransition>} />
       </Routes>

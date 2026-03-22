@@ -98,6 +98,10 @@
     @apply select-none;
   }
 
+  button:focus-visible, [role="button"]:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
   h1 {
     @apply text-3xl font-black tracking-tight;
   }
