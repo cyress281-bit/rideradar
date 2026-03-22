@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
@@ -128,16 +128,18 @@ export default function CreateRide() {
             <MapPin className="w-3.5 h-3.5" /> Meetup Location
           </Label>
           <div className="rounded-2xl overflow-hidden border border-border h-48">
-            <MapContainer
-              center={[34.05, -118.25]}
-              zoom={11}
-              className="h-full w-full"
-              zoomControl={false}
-              attributionControl={false}
-            >
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-              <LocationPicker position={position} setPosition={setPosition} />
-            </MapContainer>
+            <Suspense fallback={<div className="w-full h-full bg-secondary/40 animate-pulse" />}>
+              <MapContainer
+                center={[34.05, -118.25]}
+                zoom={11}
+                className="h-full w-full"
+                zoomControl={false}
+                attributionControl={false}
+              >
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                <LocationPicker position={position} setPosition={setPosition} />
+              </MapContainer>
+            </Suspense>
           </div>
           <p className="text-[10px] text-muted-foreground mt-1.5">Tap the map to set your meetup point</p>
         </div>

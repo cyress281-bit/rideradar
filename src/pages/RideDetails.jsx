@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -173,16 +173,18 @@ export default function RideDetails() {
       {/* Map */}
       <div className="px-5 mb-4">
         <div className="rounded-2xl overflow-hidden border border-border h-44">
-          <MapContainer
-            center={[ride.meetup_lat, ride.meetup_lng]}
-            zoom={14}
-            className="h-full w-full"
-            zoomControl={false}
-            attributionControl={false}
-          >
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-            <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
-          </MapContainer>
+          <Suspense fallback={<div className="w-full h-full bg-secondary/40 animate-pulse" />}>
+            <MapContainer
+              center={[ride.meetup_lat, ride.meetup_lng]}
+              zoom={14}
+              className="h-full w-full"
+              zoomControl={false}
+              attributionControl={false}
+            >
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+              <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
+            </MapContainer>
+          </Suspense>
         </div>
       </div>
 
