@@ -1,134 +1,270 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import { X, MapPin, Users, Clock, ChevronRight, Bike } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { AnimatePresence, motion } from "framer-motion";
+import { Radio, Layers, RefreshCw } from "lucide-react";
+import MeetupPin from "@/components/map/MeetupPin";
+import ActiveRiderDot from "@/components/map/ActiveRiderDot";
+import RideInfoPanel from "@/components/map/RideInfoPanel";
 
-const meetupIcon = L.divIcon({
-  className: "custom-marker",
-  html: `<div style="width:36px;height:36px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #1e3a5f;box-shadow:0 0 16px rgba(59,130,246,0.4)">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-  </div>`,
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
-});
+const CHECK_IN_RADIUS_METERS = 300;
+const LOCATION_UPDATE_INTERVAL = 8000;
 
-const activeIcon = L.divIcon({
-  className: "custom-marker",
-  html: `<div style="width:36px;height:36px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #7c2d12;box-shadow:0 0 16px rgba(249,115,22,0.5)">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><circle cx="12" cy="12" r="4"/></svg>
-  </div>`,
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
-});
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Recenter map when rides load
+function MapAutoCenter({ rides }) {
+  const map = useMap();
+  const centered = useRef(false);
+  useEffect(() => {
+    if (!centered.current && rides.length > 0) {
+      map.setView([rides[0].meetup_lat, rides[0].meetup_lng], 12, { animate: true });
+      centered.current = true;
+    }
+  }, [rides, map]);
+  return null;
+}
 
 export default function LiveGrid() {
+  const queryClient = useQueryClient();
+  const [user, setUser] = useState(null);
   const [selectedRide, setSelectedRide] = useState(null);
+  const [myPosition, setMyPosition] = useState(null);
+  const [checkedInRides, setCheckedInRides] = useState(new Set());
+  const locationRecordIds = useRef({}); // ride_id -> riderLocation record id
+  const watchIdRef = useRef(null);
 
-  const { data: rides = [] } = useQuery({
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  // Fetch active/meetup rides
+  const { data: rides = [], refetch: refetchRides } = useQuery({
     queryKey: ["rides-grid"],
-    queryFn: () => base44.entities.Ride.filter(
-      { status: { $in: ["meetup", "active"] } },
-      "-created_date",
-      100
-    ),
+    queryFn: () => base44.entities.Ride.filter({ status: { $in: ["meetup", "active"] } }, "-created_date", 100),
+    refetchInterval: 15000,
   });
 
-  const center = rides.length > 0
-    ? [rides[0].meetup_lat, rides[0].meetup_lng]
-    : [34.05, -118.25];
+  // Fetch all participants for rides
+  const rideIds = rides.map((r) => r.id);
+  const { data: allParticipants = [] } = useQuery({
+    queryKey: ["grid-participants", rideIds.join(",")],
+    queryFn: async () => {
+      if (rideIds.length === 0) return [];
+      const results = await Promise.all(
+        rideIds.map((id) => base44.entities.RideParticipant.filter({ ride_id: id }))
+      );
+      return results.flat();
+    },
+    enabled: rideIds.length > 0,
+    refetchInterval: 10000,
+  });
+
+  // Fetch all rider locations for active/meetup rides
+  const { data: riderLocations = [] } = useQuery({
+    queryKey: ["rider-locations", rideIds.join(",")],
+    queryFn: async () => {
+      if (rideIds.length === 0) return [];
+      const results = await Promise.all(
+        rideIds.map((id) => base44.entities.RiderLocation.filter({ ride_id: id, is_active: true }))
+      );
+      return results.flat();
+    },
+    enabled: rideIds.length > 0,
+    refetchInterval: 5000,
+  });
+
+  // Real-time subscription to RiderLocation changes
+  useEffect(() => {
+    const unsub = base44.entities.RiderLocation.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["rider-locations"] });
+    });
+    return unsub;
+  }, [queryClient]);
+
+  // Real-time subscription to Ride changes
+  useEffect(() => {
+    const unsub = base44.entities.Ride.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
+    });
+    return unsub;
+  }, [queryClient]);
+
+  // Update or create location record for user in a ride
+  const upsertLocation = useCallback(async (ride, lat, lng, checkedIn) => {
+    if (!user) return;
+    const username = user.username || user.email?.split("@")[0] || "rider";
+    const existingId = locationRecordIds.current[ride.id];
+    if (existingId) {
+      await base44.entities.RiderLocation.update(existingId, { lat, lng, checked_in: checkedIn, is_active: true });
+    } else {
+      // Check if record already exists in DB
+      const existing = await base44.entities.RiderLocation.filter({ ride_id: ride.id, user_email: user.email });
+      if (existing.length > 0) {
+        locationRecordIds.current[ride.id] = existing[0].id;
+        await base44.entities.RiderLocation.update(existing[0].id, { lat, lng, checked_in: checkedIn, is_active: true });
+      } else {
+        const created = await base44.entities.RiderLocation.create({
+          ride_id: ride.id, user_email: user.email, username, lat, lng, checked_in: checkedIn, is_active: true,
+        });
+        locationRecordIds.current[ride.id] = created.id;
+      }
+    }
+  }, [user]);
+
+  // Auto check-in: if within radius of meetup, mark checked in
+  const handlePositionUpdate = useCallback(async (lat, lng) => {
+    setMyPosition({ lat, lng });
+    if (!user) return;
+
+    // Only act on rides user is approved for
+    const myApprovedRideIds = allParticipants
+      .filter((p) => p.user_email === user.email && p.status === "approved")
+      .map((p) => p.ride_id);
+
+    for (const ride of rides) {
+      if (!myApprovedRideIds.includes(ride.id)) continue;
+
+      if (ride.status === "meetup") {
+        const dist = getDistance(lat, lng, ride.meetup_lat, ride.meetup_lng);
+        const alreadyCheckedIn = checkedInRides.has(ride.id);
+        if (dist <= CHECK_IN_RADIUS_METERS && !alreadyCheckedIn) {
+          setCheckedInRides((prev) => new Set([...prev, ride.id]));
+          await upsertLocation(ride, lat, lng, true);
+          // Update ride rider_count
+          const checkedInCount = riderLocations.filter((l) => l.ride_id === ride.id && l.checked_in).length + 1;
+          await base44.entities.Ride.update(ride.id, {
+            rider_count: checkedInCount,
+            status_message: `${checkedInCount} rider${checkedInCount !== 1 ? "s" : ""} at meetup`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
+          queryClient.invalidateQueries({ queryKey: ["rider-locations"] });
+        } else if (alreadyCheckedIn) {
+          await upsertLocation(ride, lat, lng, true);
+        }
+      } else if (ride.status === "active") {
+        // Just update position for live tracking
+        await upsertLocation(ride, lat, lng, true);
+      }
+    }
+  }, [user, rides, allParticipants, checkedInRides, riderLocations, upsertLocation, queryClient]);
+
+  // Start GPS watch
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => handlePositionUpdate(pos.coords.latitude, pos.coords.longitude),
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+    return () => {
+      if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
+    };
+  }, [handlePositionUpdate]);
+
+  const activeRides = rides.filter((r) => r.status === "active");
+  const meetupRides = rides.filter((r) => r.status === "meetup");
 
   return (
-    <div className="h-screen relative">
+    <div className="h-screen relative overflow-hidden">
       <MapContainer
-        center={center}
+        center={[34.05, -118.25]}
         zoom={11}
         className="h-full w-full"
         zoomControl={false}
         attributionControl={false}
       >
         <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-        {rides.map((ride) => (
-          <Marker
+        <MapAutoCenter rides={rides} />
+
+        {/* Meetup pins */}
+        {meetupRides.map((ride) => (
+          <MeetupPin
             key={ride.id}
-            position={[ride.meetup_lat, ride.meetup_lng]}
-            icon={ride.status === "active" ? activeIcon : meetupIcon}
-            eventHandlers={{ click: () => setSelectedRide(ride) }}
+            ride={ride}
+            participants={allParticipants.filter((p) => p.ride_id === ride.id)}
+            onClick={() => setSelectedRide(ride)}
           />
         ))}
+
+        {/* Active ride: show live rider dots */}
+        {activeRides.map((ride) =>
+          riderLocations
+            .filter((l) => l.ride_id === ride.id && l.is_active)
+            .map((loc) => (
+              <ActiveRiderDot
+                key={loc.id}
+                location={loc}
+                isCurrentUser={loc.user_email === user?.email}
+              />
+            ))
+        )}
       </MapContainer>
 
-      {/* Legend */}
-      <div className="absolute top-4 left-4 z-[1000] bg-card/90 backdrop-blur-xl rounded-xl p-3 border border-border">
-        <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Legend</p>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <span className="text-xs text-foreground">Meetup Point</span>
+      {/* HUD Top Bar */}
+      <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center justify-between gap-3 pointer-events-none">
+        {/* Left: Legend */}
+        <div className="bg-card/90 backdrop-blur-xl rounded-xl px-3 py-2 border border-border pointer-events-auto">
+          <div className="flex items-center gap-3 text-[10px]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="text-muted-foreground">Meetup</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+              <span className="text-muted-foreground">Starting Soon</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+              <span className="text-muted-foreground">Live</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-xs text-foreground">Active Ride</span>
+        </div>
+
+        {/* Right: Stats */}
+        <div className="flex flex-col gap-1.5 items-end pointer-events-auto">
+          <div className="bg-card/90 backdrop-blur-xl rounded-xl px-3 py-2 border border-border flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+            </span>
+            <span className="text-xs font-semibold text-foreground">{rides.length} on grid</span>
           </div>
+          {activeRides.length > 0 && (
+            <div className="bg-primary/10 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-primary/30">
+              <span className="text-[10px] font-bold text-primary">{activeRides.length} LIVE</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Ride count badge */}
-      <div className="absolute top-4 right-4 z-[1000] bg-card/90 backdrop-blur-xl rounded-xl px-3 py-2 border border-border">
-        <span className="text-xs font-semibold text-foreground">{rides.length} on grid</span>
-      </div>
+      {/* GPS indicator */}
+      {myPosition && (
+        <div className="absolute bottom-24 right-4 z-[1000] bg-card/90 backdrop-blur-xl rounded-xl px-2.5 py-1.5 border border-primary/30 flex items-center gap-1.5">
+          <Radio className="w-3 h-3 text-primary animate-pulse" />
+          <span className="text-[10px] font-medium text-primary">Tracking</span>
+        </div>
+      )}
 
-      {/* Selected ride panel */}
+      {/* Ride info panel */}
       <AnimatePresence>
         {selectedRide && (
-          <motion.div
-            initial={{ y: 300, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 300, opacity: 0 }}
-            className="absolute bottom-20 left-4 right-4 z-[1000] bg-card/95 backdrop-blur-xl rounded-2xl p-5 border border-border shadow-2xl"
-          >
-            <button
-              onClick={() => setSelectedRide(null)}
-              className="absolute top-3 right-3 w-7 h-7 rounded-full bg-secondary flex items-center justify-center"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-1">
-              {selectedRide.status === "active" && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                </span>
-              )}
-              <h3 className="font-bold text-base">{selectedRide.title}</h3>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">@{selectedRide.host_username}</p>
-
-            <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                {formatDistanceToNow(new Date(selectedRide.start_time), { addSuffix: true })}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" />
-                {selectedRide.rider_count || 1} rider{(selectedRide.rider_count || 1) !== 1 ? "s" : ""}
-              </span>
-            </div>
-
-            <Link to={`/rides/${selectedRide.id}`}>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-                View Details
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
-          </motion.div>
+          <RideInfoPanel
+            key={selectedRide.id}
+            ride={selectedRide}
+            participants={allParticipants.filter((p) => p.ride_id === selectedRide.id)}
+            riderLocations={riderLocations}
+            onClose={() => setSelectedRide(null)}
+          />
         )}
       </AnimatePresence>
     </div>
