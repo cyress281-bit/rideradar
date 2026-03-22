@@ -111,12 +111,10 @@ export default function RideDetails() {
           role: "rider",
         };
         queryClient.setQueryData(["participants", rideId], (old) => [...(old || []), optimisticParticipant]);
-        setJoined(true);
         return previousData;
       },
       onError: (err, newData, previousData) => {
         if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-        setJoined(false);
       },
       errorMessage: "Failed to join ride",
       successMessage: "You joined the ride!",
