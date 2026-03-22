@@ -18,22 +18,32 @@ function createActiveIcon(riderCount) {
   });
 }
 
-const ActiveRidePin = memo(function ActiveRidePin({ ride, onClick }) {
-  // Memoize handlers to prevent re-render cascades
-  const handlers = React.useMemo(() => ({ click: onClick }), [onClick]);
+const ActiveRidePin = memo(
+  function ActiveRidePin({ ride, onClick }) {
+    // Memoize handlers and icon to prevent re-render cascades
+    const handlers = React.useMemo(() => ({ click: onClick }), [onClick]);
+    const icon = React.useMemo(
+      () => createActiveIcon(ride.rider_count || 1),
+      [ride.rider_count]
+    );
 
-  return (
-    <Marker
-      position={[ride.meetup_lat, ride.meetup_lng]}
-      icon={createActiveIcon(ride.rider_count || 1)}
-      eventHandlers={handlers}
-    />
-  );
-}, (prevProps, nextProps) => {
-  // Only re-render if ride ID or rider count changes
-  return prevProps.ride.id === nextProps.ride.id &&
-         prevProps.ride.rider_count === nextProps.ride.rider_count &&
-         prevProps.onClick === nextProps.onClick;
-});
+    return (
+      <Marker
+        position={[ride.meetup_lat, ride.meetup_lng]}
+        icon={icon}
+        eventHandlers={handlers}
+        alt={`Active ride: ${ride.title} - ${ride.rider_count || 1} riders`}
+      />
+    );
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if ride ID or rider count changes
+    return (
+      prevProps.ride.id === nextProps.ride.id &&
+      prevProps.ride.rider_count === nextProps.ride.rider_count &&
+      prevProps.onClick === nextProps.onClick
+    );
+  }
+);
 
-export default ActiveRidePin;
+ActiveRidePin.displayName = "ActiveRidePin";

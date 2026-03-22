@@ -22,29 +22,43 @@ function createMeetupIcon(checkedIn, total, isStartingSoon) {
   });
 }
 
-const MeetupPin = memo(function MeetupPin({ ride, participants, onClick }) {
-  const approved = participants.filter((p) => p.status === "approved");
-  const checkedIn = participants.filter((p) => p.status === "approved" && p.checked_in).length;
-  const startTime = new Date(ride.start_time);
-  const minsUntil = (startTime - Date.now()) / 60000;
-  const isStartingSoon = minsUntil <= 30 && minsUntil > -5;
+const MeetupPin = memo(
+  function MeetupPin({ ride, participants, onClick }) {
+    const approved = participants.filter((p) => p.status === "approved");
+    const checkedIn = participants.filter((p) => p.status === "approved" && p.checked_in)
+      .length;
+    const startTime = new Date(ride.start_time);
+    const minsUntil = (startTime - Date.now()) / 60000;
+    const isStartingSoon = minsUntil <= 30 && minsUntil > -5;
 
-  // Memoize handlers to prevent re-render cascades
-  const handlers = React.useMemo(() => ({ click: onClick }), [onClick]);
+    // Memoize handlers and icon to prevent re-render cascades
+    const handlers = React.useMemo(() => ({ click: onClick }), [onClick]);
+    const icon = React.useMemo(
+      () => createMeetupIcon(checkedIn, approved.length, isStartingSoon),
+      [checkedIn, approved.length, isStartingSoon]
+    );
 
-  return (
-    <Marker
-      position={[ride.meetup_lat, ride.meetup_lng]}
-      icon={createMeetupIcon(checkedIn, approved.length, isStartingSoon)}
-      eventHandlers={handlers}
-    />
-  );
-}, (prevProps, nextProps) => {
-  // Custom equality: only re-render if ride ID, checkin count, or participants length changes
-  return prevProps.ride.id === nextProps.ride.id &&
-         prevProps.participants.length === nextProps.participants.length &&
-         prevProps.participants.filter((p) => p.checked_in).length === nextProps.participants.filter((p) => p.checked_in).length &&
-         prevProps.onClick === nextProps.onClick;
-});
+    return (
+      <Marker
+        position={[ride.meetup_lat, ride.meetup_lng]}
+        icon={icon}
+        eventHandlers={handlers}
+        alt={`Meetup: ${ride.title} - ${checkedIn}/${approved.length} riders checked in`}
+      />
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom equality: only re-render if ride ID, checkin count, or participants length changes
+    const prevCheckedIn = prevProps.participants.filter((p) => p.checked_in).length;
+    const nextCheckedIn = nextProps.participants.filter((p) => p.checked_in).length;
 
-export default MeetupPin;
+    return (
+      prevProps.ride.id === nextProps.ride.id &&
+      prevProps.participants.length === nextProps.participants.length &&
+      prevCheckedIn === nextCheckedIn &&
+      prevProps.onClick === nextProps.onClick
+    );
+  }
+);
+
+MeetupPin.displayName = "MeetupPin";

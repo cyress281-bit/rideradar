@@ -62,8 +62,8 @@ export default function RideNowAlert({ user }) {
   };
 
   return (
-    <div className="fixed top-4 left-3 right-3 z-[2000] flex flex-col gap-2 pointer-events-none">
-      <AnimatePresence>
+     <div className="fixed top-4 left-3 right-3 z-[2000] flex flex-col gap-2 pointer-events-none" role="region" aria-label="Ride notifications" aria-live="polite" aria-atomic="false">
+       <AnimatePresence>
         {alerts.map((alert) => (
           <motion.div
             key={alert.alertId}
@@ -73,8 +73,8 @@ export default function RideNowAlert({ user }) {
             transition={{ type: "spring", damping: 24, stiffness: 280 }}
             className="pointer-events-auto bg-card/98 backdrop-blur-2xl border border-primary/40 rounded-2xl shadow-2xl overflow-hidden"
           >
-            <div className="h-1 w-full bg-gradient-to-r from-primary to-green-400" />
-            <div className="flex items-center gap-3 px-4 py-3">
+            <div className="h-1 w-full bg-gradient-to-r from-primary to-green-400" aria-hidden="true" />
+            <div className="flex items-center gap-3 px-4 py-3" role="article">
               <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
                 <Zap className="w-5 h-5 text-primary" />
               </div>
@@ -88,18 +88,20 @@ export default function RideNowAlert({ user }) {
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <Link
-                  to={`/rides/${alert.ride_id}`}
-                  onClick={() => dismiss(alert.alertId)}
-                  className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  View
-                </Link>
-                <button
-                  onClick={() => dismiss(alert.alertId)}
-                  className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                   to={`/rides/${alert.ride_id}`}
+                   onClick={() => dismiss(alert.alertId)}
+                   className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                   aria-label={`View ride: ${alert.ride_title} by @${alert.host_username}`}
+                 >
+                   View
+                 </Link>
+                 <button
+                   onClick={() => dismiss(alert.alertId)}
+                   className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors min-h-[44px] min-w-[44px]"
+                   aria-label={`Dismiss ride notification for ${alert.ride_title}`}
+                 >
+                   <X className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                 </button>
               </div>
             </div>
           </motion.div>
