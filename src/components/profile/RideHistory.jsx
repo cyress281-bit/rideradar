@@ -29,8 +29,8 @@ export default function RideHistory({ userEmail }) {
 
   if (rideParticipants.length === 0) {
     return (
-      <div className="text-center py-6">
-        <Route className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+      <div className="text-center py-6" role="status" aria-label="No ride history">
+        <Route className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" aria-hidden="true" />
         <p className="text-xs text-muted-foreground">No rides yet. Start riding!</p>
       </div>
     );
