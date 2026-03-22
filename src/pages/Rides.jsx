@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import RideCard from "../components/rides/RideCard";
-import CreateRideButton from "../components/rides/CreateRideButton";
 import EventCalendar from "../components/rides/EventCalendar";
 import EventRSVPCard from "../components/rides/EventRSVPCard";
 
@@ -149,9 +148,7 @@ export default function Rides() {
           )}
         </TabsContent>
       </Tabs>
-
-      <CreateRideButton />
-    </div>
+      </div>
   );
 }
 

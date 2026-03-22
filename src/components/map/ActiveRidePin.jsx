@@ -47,3 +47,5 @@ const ActiveRidePin = memo(
 );
 
 ActiveRidePin.displayName = "ActiveRidePin";
+
+export default ActiveRidePin;
