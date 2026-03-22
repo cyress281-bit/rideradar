@@ -35,6 +35,7 @@ export default function CreateRide() {
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [position, setPosition] = useState(null);
+  const [rideMode, setRideMode] = useState("now"); // "now" | "schedule"
   const [form, setForm] = useState({
     title: "",
     start_time: "",
