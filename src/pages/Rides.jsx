@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -19,6 +19,26 @@ export default function Rides() {
     queryKey: ["all-rides"],
     queryFn: () => base44.entities.Ride.list("-created_date", 100),
   });
+
+  const handlePullRefresh = (e) => {
+    if (scrollContainerRef.current?.scrollTop === 0) {
+      const deltaY = e.touches[0].clientY - touchStartY.current;
+      if (deltaY > 0) {
+        setPullRefresh(Math.min(deltaY / 100, 1));
+      }
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (pullRefresh > 0.5) {
+      refetchRides();
+    }
+    setPullRefresh(0);
+  };
 
   const { data: myParticipations = [] } = useQuery({
     queryKey: ["my-participations", user?.email],
@@ -47,7 +67,13 @@ export default function Rides() {
   });
 
   return (
-    <div className="min-h-screen pb-24">
+    <div
+      ref={scrollContainerRef}
+      className="min-h-screen pb-24"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handlePullRefresh}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-lg font-bold">Rides</h1>
         <p className="text-xs text-muted-foreground">Browse or manage your rides</p>

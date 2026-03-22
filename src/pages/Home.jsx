@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import HomeHeader from "../components/home/HomeHeader";
@@ -10,12 +10,15 @@ import CreateRideButton from "../components/rides/CreateRideButton";
 
 export default function Home() {
   const [user, setUser] = useState(null);
+  const [pullRefresh, setPullRefresh] = useState(0);
+  const touchStartY = useRef(0);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: rides = [] } = useQuery({
+  const { data: rides = [], refetch: refetchRides } = useQuery({
     queryKey: ["rides-home"],
     queryFn: () => base44.entities.Ride.filter(
       { status: { $in: ["meetup", "active"] } },
@@ -23,6 +26,26 @@ export default function Home() {
       50
     ),
   });
+
+  const handlePullRefresh = (e) => {
+    if (scrollContainerRef.current?.scrollTop === 0) {
+      const deltaY = e.touches[0].clientY - touchStartY.current;
+      if (deltaY > 0) {
+        setPullRefresh(Math.min(deltaY / 100, 1));
+      }
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (pullRefresh > 0.5) {
+      refetchRides();
+    }
+    setPullRefresh(0);
+  };
 
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
@@ -32,7 +55,13 @@ export default function Home() {
   const totalRiders = rides.reduce((acc, r) => acc + (r.rider_count || 1), 0);
 
   return (
-    <div className="min-h-screen">
+    <div
+      ref={scrollContainerRef}
+      className="min-h-screen"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handlePullRefresh}
+      onTouchEnd={handleTouchEnd}
+    >
       <HomeHeader username={user?.username} />
       <StatsBar
         totalRiders={totalRiders}
