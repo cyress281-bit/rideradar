@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Radio, Layers, RefreshCw } from "lucide-react";
 import MeetupPin from "@/components/map/MeetupPin";
 import ActiveRiderDot from "@/components/map/ActiveRiderDot";
+import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
 
 const CHECK_IN_RADIUS_METERS = 300;
