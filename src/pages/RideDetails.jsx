@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useTabNavigation } from "@/context/TabNavigationContext";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
@@ -32,9 +32,9 @@ const vibeLabels = {
 };
 
 export default function RideDetails() {
-  const rideId = new URLSearchParams(window.location.search).get("id") ||
-    window.location.pathname.split("/rides/")[1];
-  const navigate = useNavigate();
+   const rideId = new URLSearchParams(window.location.search).get("id") ||
+     window.location.pathname.split("/rides/")[1];
+   const { goBack } = useTabNavigation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -140,18 +140,42 @@ export default function RideDetails() {
     }
   );
 
-  const updateStatus = async (newStatus) => {
-    await base44.entities.Ride.update(rideId, { status: newStatus });
-    queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
-    toast({ title: `Ride ${newStatus === "active" ? "started" : newStatus}!` });
-  };
+  const statusMutation = useMutationWithOptimism(
+    async (newStatus) => {
+      await base44.entities.Ride.update(rideId, { status: newStatus });
+    },
+    {
+      onSuccess: (_, newStatus) => {
+        queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
+      },
+      successMessage: `Ride ${true === "active" ? "started" : "updated"}!`,
+    }
+  );
+
+  const statusMessageMutation = useMutationWithOptimism(
+    async () => {
+      if (!statusMsg.trim()) return;
+      await base44.entities.Ride.update(rideId, { status_message: statusMsg });
+    },
+    {
+      onMutate: async () => {
+        await queryClient.cancelQueries({ queryKey: ["ride", rideId] });
+        const previousData = queryClient.getQueryData(["ride", rideId]);
+        queryClient.setQueryData(["ride", rideId], (old) => ({ ...old, status_message: statusMsg }));
+        return previousData;
+      },
+      onError: (err, _, previousData) => {
+        if (previousData) queryClient.setQueryData(["ride", rideId], previousData);
+      },
+      successMessage: "Status updated!",
+    }
+  );
+
+  const updateStatus = (newStatus) => statusMutation.mutate(newStatus);
 
   const updateStatusMessage = async () => {
-    if (!statusMsg.trim()) return;
-    await base44.entities.Ride.update(rideId, { status_message: statusMsg });
-    queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
+    await statusMessageMutation.mutate();
     setStatusMsg("");
-    toast({ title: "Status updated!" });
   };
 
   if (isLoading || !ride) {
@@ -348,6 +372,7 @@ export default function RideDetails() {
               />
               <Button 
                 onClick={updateStatusMessage} 
+                disabled={statusMessageMutation.isPending}
                 size="sm" 
                 variant="secondary" 
                 className="min-h-[44px] min-w-[44px]"
@@ -359,21 +384,23 @@ export default function RideDetails() {
             <div className="flex gap-2">
               {ride.status === "meetup" && (
                 <Button
-                  onClick={() => updateStatus("active")}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
-                >
-                  <Play className="w-4 h-4 mr-1.5" /> Start Ride
-                </Button>
-              )}
-              {(ride.status === "meetup" || ride.status === "active") && (
-                <Button
-                  onClick={() => updateStatus("completed")}
-                  variant="secondary"
-                  className="flex-1"
-                >
-                  <Square className="w-4 h-4 mr-1.5" /> End Ride
-                </Button>
-              )}
+                    onClick={() => updateStatus("active")}
+                    disabled={statusMutation.isPending}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
+                  >
+                    <Play className="w-4 h-4 mr-1.5" /> {statusMutation.isPending ? "Starting..." : "Start Ride"}
+                  </Button>
+                )}
+                {(ride.status === "meetup" || ride.status === "active") && (
+                  <Button
+                    onClick={() => updateStatus("completed")}
+                    disabled={statusMutation.isPending}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    <Square className="w-4 h-4 mr-1.5" /> End Ride
+                  </Button>
+                )}
             </div>
           </div>
         )}
