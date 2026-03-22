@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { Send, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -11,13 +12,12 @@ import DirectMessageThread from "@/components/messages/DirectMessageThread";
 import RideMessagesList from "@/components/messages/RideMessagesList";
 
 export default function Messages() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("direct"); // "direct" | "rides"
-  const [selectedContact, setSelectedContact] = useState(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending] = useState(false);
+   const { toast } = useToast();
+   const queryClient = useQueryClient();
+   const [user, setUser] = useState(null);
+   const [activeTab, setActiveTab] = useState("direct"); // "direct" | "rides"
+   const [selectedContact, setSelectedContact] = useState(null);
+   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -100,41 +100,47 @@ export default function Messages() {
     ).values()
   );
 
-  const handleSendDM = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedContact || !user) return;
-
-    const messageText = newMessage;
-    setNewMessage("");
-    
-    const previousData = queryClient.getQueryData(["direct-messages", user.email]);
-    const optimisticMessage = {
-      id: `optimistic-${Date.now()}`,
-      sender_email: user.email,
-      sender_username: user.username || user.email?.split("@")[0] || "rider",
-      recipient_email: selectedContact.email,
-      recipient_username: selectedContact.username,
-      text: messageText,
-      read: false,
-      created_date: new Date().toISOString(),
-    };
-    
-    queryClient.setQueryData(["direct-messages", user.email], (old) => [...old, optimisticMessage]);
-
-    try {
+  const dmMutation = useMutationWithOptimism(
+    async (messageData) => {
       const username = user.username || user.email?.split("@")[0] || "rider";
       await base44.entities.DirectMessage.create({
         sender_email: user.email,
         sender_username: username,
         recipient_email: selectedContact.email,
         recipient_username: selectedContact.username,
-        text: messageText,
+        text: messageData.text,
         read: false,
       });
-      queryClient.invalidateQueries({ queryKey: ["direct-messages"] });
-    } catch (err) {
-      queryClient.setQueryData(["direct-messages", user.email], previousData);
+    },
+    {
+      onMutate: async (messageData) => {
+        await queryClient.cancelQueries({ queryKey: ["direct-messages", user.email] });
+        const previousData = queryClient.getQueryData(["direct-messages", user.email]);
+        const optimisticMessage = {
+          id: `optimistic-${Date.now()}`,
+          sender_email: user.email,
+          sender_username: user.username || user.email?.split("@")[0] || "rider",
+          recipient_email: selectedContact.email,
+          recipient_username: selectedContact.username,
+          text: messageData.text,
+          read: false,
+          created_date: new Date().toISOString(),
+        };
+        queryClient.setQueryData(["direct-messages", user.email], (old) => [...(old || []), optimisticMessage]);
+        return previousData;
+      },
+      onError: (err, _, previousData) => {
+        if (previousData) queryClient.setQueryData(["direct-messages", user.email], previousData);
+      },
     }
+  );
+
+  const handleSendDM = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedContact || !user) return;
+    const messageText = newMessage;
+    setNewMessage("");
+    dmMutation.mutate({ text: messageText });
   };
 
   const unreadDMs = directMessages.filter(
@@ -235,11 +241,11 @@ export default function Messages() {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   className="bg-secondary border-border"
-                  disabled={sending}
+                  disabled={dmMutation.isPending}
                 />
                 <Button
                   type="submit"
-                  disabled={sending || !newMessage.trim()}
+                  disabled={dmMutation.isPending || !newMessage.trim()}
                   size="icon"
                   className="bg-primary hover:bg-primary/90"
                 >
