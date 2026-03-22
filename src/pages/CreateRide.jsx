@@ -72,8 +72,6 @@ export default function CreateRide() {
       start_time: new Date(form.start_time).toISOString(),
       duration_minutes: parseInt(form.duration_minutes),
       vibe: form.vibe || undefined,
-      bike_class: form.bike_class,
-      max_riders: form.max_riders ? parseInt(form.max_riders) : undefined,
       requirements: form.requirements || undefined,
       status: "meetup",
       rider_count: 1,
