@@ -29,13 +29,22 @@ const MeetupPin = memo(function MeetupPin({ ride, participants, onClick }) {
   const minsUntil = (startTime - Date.now()) / 60000;
   const isStartingSoon = minsUntil <= 30 && minsUntil > -5;
 
+  // Memoize handlers to prevent re-render cascades
+  const handlers = React.useMemo(() => ({ click: onClick }), [onClick]);
+
   return (
     <Marker
       position={[ride.meetup_lat, ride.meetup_lng]}
       icon={createMeetupIcon(checkedIn, approved.length, isStartingSoon)}
-      eventHandlers={{ click: onClick }}
+      eventHandlers={handlers}
     />
   );
+}, (prevProps, nextProps) => {
+  // Custom equality: only re-render if ride ID, checkin count, or participants length changes
+  return prevProps.ride.id === nextProps.ride.id &&
+         prevProps.participants.length === nextProps.participants.length &&
+         prevProps.participants.filter((p) => p.checked_in).length === nextProps.participants.filter((p) => p.checked_in).length &&
+         prevProps.onClick === nextProps.onClick;
 });
 
 export default MeetupPin;

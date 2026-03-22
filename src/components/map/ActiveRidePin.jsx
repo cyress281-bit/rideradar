@@ -19,13 +19,21 @@ function createActiveIcon(riderCount) {
 }
 
 const ActiveRidePin = memo(function ActiveRidePin({ ride, onClick }) {
+  // Memoize handlers to prevent re-render cascades
+  const handlers = React.useMemo(() => ({ click: onClick }), [onClick]);
+
   return (
     <Marker
       position={[ride.meetup_lat, ride.meetup_lng]}
       icon={createActiveIcon(ride.rider_count || 1)}
-      eventHandlers={{ click: onClick }}
+      eventHandlers={handlers}
     />
   );
+}, (prevProps, nextProps) => {
+  // Only re-render if ride ID or rider count changes
+  return prevProps.ride.id === nextProps.ride.id &&
+         prevProps.ride.rider_count === nextProps.ride.rider_count &&
+         prevProps.onClick === nextProps.onClick;
 });
 
 export default ActiveRidePin;

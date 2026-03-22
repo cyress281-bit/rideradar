@@ -62,6 +62,10 @@ const RideRoutePolyline = memo(function RideRoutePolyline({ trackPoints, rideSta
   }, [trackPoints, map, rideStatus]);
 
   return null;
+}, (prevProps, nextProps) => {
+  // Only re-render if track points count or ride status changes
+  return prevProps.trackPoints.length === nextProps.trackPoints.length &&
+         prevProps.rideStatus === nextProps.rideStatus;
 });
 
 export default RideRoutePolyline;

@@ -27,6 +27,12 @@ const ActiveRiderDot = memo(function ActiveRiderDot({ location, isCurrentUser })
       icon={createRiderIcon(location.username, isCurrentUser)}
     />
   );
+}, (prevProps, nextProps) => {
+  // Only re-render if location coords or user status changes
+  return prevProps.location.id === nextProps.location.id &&
+         prevProps.location.lat === nextProps.location.lat &&
+         prevProps.location.lng === nextProps.location.lng &&
+         prevProps.isCurrentUser === nextProps.isCurrentUser;
 });
 
 export default ActiveRiderDot;
