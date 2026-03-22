@@ -9,8 +9,18 @@ module.exports = {
       },
   		borderRadius: {
   			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			md: 'calc(var(--radius) - 4px)',
+  			sm: 'calc(var(--radius) - 6px)',
+  			xs: 'calc(var(--radius) - 8px)'
+  		},
+  		spacing: {
+  			xs: '0.25rem',
+  			sm: '0.5rem',
+  			md: '1rem',
+  			lg: '1.5rem',
+  			xl: '2rem',
+  			'2xl': '2.5rem',
+  			'3xl': '3rem'
   		},
   		colors: {
   			background: 'hsl(var(--background))',
