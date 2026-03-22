@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useRef, useEffect, useState } from "react";
+import React, { createContext, useContext, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const TabNavigationContext = createContext();
@@ -13,7 +13,7 @@ export function TabNavigationProvider({ children }) {
     messages: ["/messages"],
     profile: ["/profile"],
   });
-  const [isHistorySynced, setIsHistorySynced] = useState(false);
+  const isPopstateRef = useRef(false);
 
   const getCurrentTab = useCallback(() => {
     const path = location.pathname;
@@ -31,7 +31,6 @@ export function TabNavigationProvider({ children }) {
     const stack = stacks[tabName];
     if (stack && stack.length > 0) {
       const targetPath = stack[stack.length - 1];
-      window.history.pushState({ tab: tabName, path: targetPath }, "", targetPath);
       navigate(targetPath);
     }
   }, [navigate]);
@@ -45,51 +44,48 @@ export function TabNavigationProvider({ children }) {
 
     if (stack.length > 1) {
       stack.pop();
-      const targetPath = stack[stack.length - 1];
-      window.history.replaceState({ tab, path: targetPath }, "", targetPath);
-      navigate(targetPath, { replace: true });
-    } else {
-      window.history.back();
+      isPopstateRef.current = true;
+      navigate(-1);
     }
   }, [getCurrentTab, navigate]);
 
-  const updateTabStack = useCallback((path) => {
+  // Sync stack on location change
+  useEffect(() => {
     const tab = getCurrentTab();
     if (!tab) return;
 
     const stacks = stacksRef.current;
     const stack = stacks[tab];
+    const currentPath = location.pathname;
 
-    if (stack[stack.length - 1] !== path) {
-      stack.push(path);
-      window.history.pushState({ tab, path }, "", path);
+    if (isPopstateRef.current) {
+      isPopstateRef.current = false;
+      return;
     }
-  }, [getCurrentTab]);
 
-  // Handle native back gestures via popstate event
+    // Add new path to stack if not already the last item
+    if (stack[stack.length - 1] !== currentPath) {
+      stack.push(currentPath);
+    }
+  }, [location.pathname, getCurrentTab]);
+
+  // Handle native iOS back swipe and browser back button
   useEffect(() => {
-    const handlePopState = (e) => {
-      const state = e.state;
-      if (state && state.tab && state.path) {
-        const tab = state.tab;
+    const handlePopState = () => {
+      const tab = getCurrentTab();
+      if (tab) {
         const stacks = stacksRef.current;
         const stack = stacks[tab];
-        
-        // Sync stack to match history state
-        if (stack[stack.length - 1] !== state.path) {
+        // Pop the current path since navigation already happened
+        if (stack.length > 1) {
           stack.pop();
         }
-        navigate(state.path);
       }
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [navigate]);
-
-  useEffect(() => {
-    updateTabStack(location.pathname);
-  }, [location.pathname, updateTabStack]);
+  }, [getCurrentTab]);
 
   return (
     <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab }}>
