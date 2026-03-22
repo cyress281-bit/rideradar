@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Users, Clock, MapPin, UserPlus, Check } from "lucide-react";
-import { motion } from "framer-motion";
-import { formatDistanceToNow, isPast } from "date-fns";
+import { Link } from "react-router-dom";
+import { Users, Clock, MapPin, UserPlus, Check, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 import { base44 } from "@/api/base44Client";
 
 const vibeColors = {
-  chill: "from-blue-500/20 to-blue-500/5 border-blue-500/20",
-  fast: "from-red-500/20 to-red-500/5 border-red-500/20",
-  night_ride: "from-purple-500/20 to-purple-500/5 border-purple-500/20",
-  scenic: "from-green-500/20 to-green-500/5 border-green-500/20",
-  adventure: "from-amber-500/20 to-amber-500/5 border-amber-500/20",
-  commute: "from-gray-500/20 to-gray-500/5 border-gray-500/20",
+  chill: "border-blue-500/30",
+  fast: "border-red-500/30",
+  night_ride: "border-purple-500/30",
+  scenic: "border-green-500/30",
+  adventure: "border-amber-500/30",
+  commute: "border-gray-500/30",
 };
 
 const vibeAccent = {
@@ -33,24 +33,22 @@ const vibeEmoji = {
 };
 
 export default function RidePreviewCard({ ride, index = 0, user }) {
+  const [expanded, setExpanded] = useState(false);
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
 
   const startTime = new Date(ride.start_time);
   const timeLabel = formatDistanceToNow(startTime, { addSuffix: true });
-  const gradientClass = vibeColors[ride.vibe] || "from-secondary/60 to-secondary/20 border-border/50";
+  const borderClass = vibeColors[ride.vibe] || "border-border/50";
   const accentClass = vibeAccent[ride.vibe] || "text-muted-foreground";
   const emoji = vibeEmoji[ride.vibe] || "🏍️";
 
   useEffect(() => {
     if (!user) return;
     setIsHost(ride.host_email === user.email);
-    // Check if already joined
     base44.entities.RideParticipant.filter({ ride_id: ride.id, user_email: user.email })
-      .then((participants) => {
-        if (participants.length > 0) setJoined(true);
-      })
+      .then((p) => { if (p.length > 0) setJoined(true); })
       .catch(() => {});
   }, [user, ride.id, ride.host_email]);
 
@@ -74,84 +72,115 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
+      className={`rounded-xl border bg-secondary/40 ${borderClass} overflow-hidden`}
     >
-      <Link
-        to={`/rides/${ride.id}`}
-        className={`block rounded-2xl border bg-gradient-to-br ${gradientClass} p-3 hover:brightness-110 transition-all active:scale-[0.98]`}
+      {/* Collapsed row — always visible */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
       >
-        {/* Top row: live indicator + title */}
-        <div className="flex items-start gap-2 mb-2">
-          {ride.status === "active" ? (
-            <span className="relative flex h-2 w-2 mt-1.5 flex-shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-            </span>
-          ) : (
-            <span className="text-base leading-none mt-0.5">{emoji}</span>
-          )}
-          <h3 className="font-bold text-sm leading-snug line-clamp-2 flex-1">{ride.title}</h3>
-        </div>
-
-        {/* Host */}
-        <p className={`text-[11px] font-medium mb-2.5 ${accentClass}`}>@{ride.host_username}</p>
-
-        {/* Stats row */}
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {timeLabel}
+        {/* Live dot or vibe emoji */}
+        {ride.status === "active" ? (
+          <span className="relative flex h-2 w-2 flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
           </span>
-          <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {ride.rider_count || 1}{ride.max_riders ? `/${ride.max_riders}` : ""}
-          </span>
-          <span className="flex items-center gap-1 ml-auto">
-            <Clock className="w-3 h-3" />
-            {ride.duration_minutes}m
-          </span>
-        </div>
-
-        {/* Status message */}
-        {ride.status_message && (
-          <p className="mt-2 text-[10px] text-primary/80 italic truncate">"{ride.status_message}"</p>
+        ) : (
+          <span className="text-sm flex-shrink-0">{emoji}</span>
         )}
 
-        {/* Bottom row: status pill + quick join */}
-        <div className="mt-2.5 flex items-center justify-between">
-          {ride.status === "active" ? (
-            <span className="text-[9px] font-bold uppercase tracking-wider bg-green-500/15 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full">
-              Riding Now
-            </span>
-          ) : (
-            <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <MapPin className="w-2.5 h-2.5" /> Meetup
-            </span>
-          )}
+        {/* Title */}
+        <span className="font-semibold text-xs truncate flex-1">{ride.title}</span>
 
-          {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
-            <button
-              onClick={handleJoin}
-              disabled={joining || joined}
-              className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
-                joined
-                  ? "bg-green-500/15 text-green-400 border-green-500/20"
-                  : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 active:scale-95"
-              }`}
-            >
-              {joined ? (
-                <><Check className="w-3 h-3" /> Joined</>
-              ) : joining ? (
-                "..."
-              ) : (
-                <><UserPlus className="w-3 h-3" /> Join</>
+        {/* Rider count */}
+        <span className="flex items-center gap-1 text-[10px] text-muted-foreground flex-shrink-0">
+          <Users className="w-3 h-3" />
+          {ride.rider_count || 1}
+        </span>
+
+        {/* Chevron */}
+        <motion.div
+          animate={{ rotate: expanded ? 90 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex-shrink-0"
+        >
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+        </motion.div>
+      </button>
+
+      {/* Expanded details */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="expanded"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 space-y-2.5 border-t border-border/40 pt-2.5">
+              {/* Host + time */}
+              <div className="flex items-center justify-between">
+                <span className={`text-[11px] font-medium ${accentClass}`}>@{ride.host_username}</span>
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  {timeLabel}
+                </span>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {ride.rider_count || 1}{ride.max_riders ? `/${ride.max_riders}` : ""} riders
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {ride.duration_minutes} min
+                </span>
+                {ride.status === "meetup" && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> Meetup phase
+                  </span>
+                )}
+              </div>
+
+              {/* Status message */}
+              {ride.status_message && (
+                <p className="text-[10px] text-primary/80 italic">"{ride.status_message}"</p>
               )}
-            </button>
-          )}
-        </div>
-      </Link>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-0.5">
+                <Link
+                  to={`/rides/${ride.id}`}
+                  className="flex-1 text-center text-[11px] font-semibold py-1.5 rounded-lg bg-secondary border border-border hover:bg-secondary/80 transition-colors"
+                >
+                  View Details
+                </Link>
+
+                {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining || joined}
+                    className={`flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                      joined
+                        ? "bg-green-500/15 text-green-400 border-green-500/20"
+                        : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25"
+                    }`}
+                  >
+                    {joined ? <><Check className="w-3 h-3" /> Joined</> : joining ? "..." : <><UserPlus className="w-3 h-3" /> Join</>}
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
