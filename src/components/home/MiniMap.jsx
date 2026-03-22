@@ -33,7 +33,7 @@ export default function MiniMap({ rides }) {
 
   return (
     <div className="px-5 py-2">
-      <div className="relative rounded-2xl overflow-hidden border border-border h-40">
+      <div className="relative rounded-2xl overflow-hidden border border-border h-[40vh]">
         <MapContainer
           center={center}
           zoom={10}
