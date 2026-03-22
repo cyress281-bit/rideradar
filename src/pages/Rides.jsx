@@ -4,9 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import RideCard from "../components/rides/RideCard";
 import CreateRideButton from "../components/rides/CreateRideButton";
+import EventCalendar from "../components/rides/EventCalendar";
+import EventRSVPCard from "../components/rides/EventRSVPCard";
 
 export default function Rides() {
   const [user, setUser] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -28,6 +31,20 @@ export default function Rides() {
 
   const activeRides = allRides.filter((r) => r.status === "active" || r.status === "meetup");
   const pastRides = allRides.filter((r) => r.status === "completed" || r.status === "cancelled");
+  const plannedEvents = allRides.filter((r) => r.ride_type === "planned_event");
+
+  // Get RSVPs for planned events
+  const { data: allParticipants = [] } = useQuery({
+    queryKey: ["event-participants", plannedEvents.map(e => e.id).join(",")],
+    queryFn: async () => {
+      if (plannedEvents.length === 0) return [];
+      const results = await Promise.all(
+        plannedEvents.map((e) => base44.entities.RideParticipant.filter({ ride_id: e.id }))
+      );
+      return results.flat();
+    },
+    enabled: plannedEvents.length > 0,
+  });
 
   return (
     <div className="min-h-screen pb-24">
@@ -40,6 +57,9 @@ export default function Rides() {
         <TabsList className="w-full bg-secondary/60 p-1 rounded-xl mb-4">
           <TabsTrigger value="active" className="flex-1 rounded-lg text-xs data-[state=active]:bg-card">
             Active ({activeRides.length})
+          </TabsTrigger>
+          <TabsTrigger value="events" className="flex-1 rounded-lg text-xs data-[state=active]:bg-card">
+            Events ({plannedEvents.length})
           </TabsTrigger>
           <TabsTrigger value="mine" className="flex-1 rounded-lg text-xs data-[state=active]:bg-card">
             My Rides ({myRides.length})
@@ -57,6 +77,33 @@ export default function Rides() {
               {activeRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="events">
+          <div className="space-y-4">
+            <EventCalendar plannedEvents={plannedEvents} onSelectDate={setSelectedDate} selectedDate={selectedDate} />
+            {plannedEvents.length === 0 ? (
+              <EmptyState text="No planned events scheduled" />
+            ) : (
+              <div className="space-y-3">
+                {plannedEvents
+                  .filter((e) => !selectedDate || new Date(e.start_time).toDateString() === selectedDate.toDateString())
+                  .map((e) => {
+                    const participant = allParticipants.find(
+                      (p) => p.ride_id === e.id && p.user_email === user?.email
+                    );
+                    return (
+                      <EventRSVPCard
+                        key={e.id}
+                        event={e}
+                        user={user}
+                        myStatus={participant?.status}
+                      />
+                    );
+                  })}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="mine">
