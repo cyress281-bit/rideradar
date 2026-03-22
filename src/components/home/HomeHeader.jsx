@@ -12,10 +12,10 @@ export default function HomeHeader({ username }) {
           animate={{ scale: 1, opacity: 1 }}
           className="relative"
         >
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_14px_rgba(0,240,50,0.6)]">
             <Zap className="w-5 h-5 text-primary-foreground" fill="currentColor" />
           </div>
-          <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+          <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background shadow-[0_0_6px_rgba(0,240,50,0.8)]" />
         </motion.div>
         <div>
           <h1 className="text-lg font-bold tracking-tight">RideRadar</h1>
