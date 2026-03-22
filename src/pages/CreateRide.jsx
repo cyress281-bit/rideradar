@@ -55,13 +55,18 @@ export default function CreateRide() {
       toast({ title: "Tap the map to set your meetup point", variant: "destructive" });
       return;
     }
-    if (!form.title || !form.start_time) {
-      toast({ title: "Please fill in the ride name and start time", variant: "destructive" });
+    if (!form.title) {
+      toast({ title: "Please fill in the ride name", variant: "destructive" });
+      return;
+    }
+    if (rideMode === "schedule" && !form.start_time) {
+      toast({ title: "Please set a start time", variant: "destructive" });
       return;
     }
 
     setSubmitting(true);
     const username = user?.username || user?.email?.split("@")[0] || "rider";
+    const startTime = rideMode === "now" ? new Date().toISOString() : new Date(form.start_time).toISOString();
 
     const ride = await base44.entities.Ride.create({
       title: form.title,
@@ -70,13 +75,27 @@ export default function CreateRide() {
       meetup_lat: position[0],
       meetup_lng: position[1],
       meetup_address: form.meetup_address,
-      start_time: new Date(form.start_time).toISOString(),
+      start_time: startTime,
       duration_minutes: parseInt(form.duration_minutes),
       vibe: form.vibe || undefined,
       requirements: form.requirements || undefined,
       status: "meetup",
       rider_count: 1,
     });
+
+    // If "Ride Now" — broadcast a notification to nearby riders
+    if (rideMode === "now") {
+      await base44.entities.RideNotification.create({
+        ride_id: ride.id,
+        ride_title: form.title,
+        host_username: username,
+        meetup_lat: position[0],
+        meetup_lng: position[1],
+        message: `Ride starting nearby — Join?`,
+        recipient_email: "",
+        read: false,
+      });
+    }
 
     await base44.entities.RideParticipant.create({
       ride_id: ride.id,
