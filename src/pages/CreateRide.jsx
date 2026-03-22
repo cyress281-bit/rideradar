@@ -160,7 +160,43 @@ export default function CreateRide() {
           />
         </div>
 
+        {/* Ride Now / Schedule toggle */}
+        <div className="flex rounded-xl overflow-hidden border border-border bg-secondary/40 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setRideMode("now")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              rideMode === "now"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Zap className="w-4 h-4" /> Ride Now
+          </button>
+          <button
+            type="button"
+            onClick={() => setRideMode("schedule")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              rideMode === "schedule"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <CalendarClock className="w-4 h-4" /> Schedule Later
+          </button>
+        </div>
+
+        {rideMode === "now" && (
+          <div className="flex items-start gap-2.5 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2.5">
+            <Zap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-primary/90 leading-snug">
+              Nearby riders will get an instant notification: <span className="font-semibold">"Ride starting nearby — Join?"</span>
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
+          {rideMode === "schedule" && (
           <div>
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> Start Time
@@ -172,7 +208,8 @@ export default function CreateRide() {
               className="bg-secondary border-border"
             />
           </div>
-          <div>
+          )}
+          <div className={rideMode === "now" ? "col-span-2" : ""}>
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> Duration
             </Label>
