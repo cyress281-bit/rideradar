@@ -1,39 +1,47 @@
-import React, { createContext, useContext, useRef, useCallback, useEffect, useState } from "react";
+import React, { createContext, useContext, useRef, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 const NavigationDirectionContext = createContext();
 
 export function NavigationDirectionProvider({ children }) {
   const location = useLocation();
-  const historyStackRef = useRef([location.pathname]);
-  const [direction, setDirection] = useState("push");
+  const previousPathRef = useRef(location.pathname);
+  const directionRef = useRef("push"); // "push" or "pop"
+  const isNavigatingRef = useRef(false);
 
-  // Sync with browser history stack on every navigation
+  // Track history depth to determine direction
+  const historyDepthRef = useRef(0);
+
   useEffect(() => {
-    const currentPath = location.pathname;
-    const historyStack = historyStackRef.current;
-    const lastPath = historyStack[historyStack.length - 1];
+    // Detect if this is a back navigation
+    const handlePopState = () => {
+      directionRef.current = "pop";
+      isNavigatingRef.current = true;
+    };
 
-    if (currentPath === lastPath) return;
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
-    // Check if this path exists in history (back navigation)
-    const existingIndex = historyStack.lastIndexOf(currentPath);
-
-    if (existingIndex !== -1 && existingIndex < historyStack.length - 1) {
-      // Back navigation detected
-      setDirection("pop");
-      historyStackRef.current = historyStack.slice(0, existingIndex + 1);
-    } else {
-      // Forward navigation
-      setDirection("push");
-      historyStackRef.current = [...historyStack, currentPath];
+  // Update direction when path changes
+  useEffect(() => {
+    if (location.pathname !== previousPathRef.current) {
+      // If not from popstate, it's a push
+      if (!isNavigatingRef.current) {
+        directionRef.current = "push";
+      }
+      isNavigatingRef.current = false;
+      previousPathRef.current = location.pathname;
     }
   }, [location.pathname]);
 
-  const getDirection = useCallback(() => direction, [direction]);
+  const getDirection = useCallback(() => directionRef.current, []);
+  const setDirection = useCallback((dir) => {
+    directionRef.current = dir;
+  }, []);
 
   return (
-    <NavigationDirectionContext.Provider value={{ getDirection, direction }}>
+    <NavigationDirectionContext.Provider value={{ getDirection, setDirection }}>
       {children}
     </NavigationDirectionContext.Provider>
   );

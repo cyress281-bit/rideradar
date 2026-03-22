@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useRef, useEffect, useState } from "react";
+import React, { createContext, useContext, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useNavigationDirection } from "./NavigationDirectionContext";
 
@@ -15,10 +15,9 @@ const TAB_ROOT_PATHS = {
 export function TabNavigationProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { direction } = useNavigationDirection();
-  const [, setTabState] = useState(0); // Force re-render on tab switch
+  const { setDirection } = useNavigationDirection();
   
-  // Persistent tab stacks survive component remounts
+  // Initialize and maintain strict tab stacks
   const stacksRef = useRef({
     home: ["/"],
     grid: ["/grid"],
@@ -35,14 +34,8 @@ export function TabNavigationProvider({ children }) {
     profile: 0,
   });
   
-  // Component state cache to preserve component instances per tab
-  const componentStateRef = useRef({
-    home: null,
-    grid: null,
-    rides: null,
-    messages: null,
-    profile: null,
-  });
+  // Keep navigation direction separate; tab stacks always sync from the real router location.
+  const popStateFrameRef = useRef(null);
 
   const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
@@ -88,7 +81,7 @@ export function TabNavigationProvider({ children }) {
     (tabName) => {
       const currentTab = getCurrentTab();
       
-      // Save current scroll position and state before switching
+      // Save current scroll position before switching
       if (currentTab) {
         const mainElement = document.querySelector('main');
         if (mainElement) {
@@ -102,8 +95,8 @@ export function TabNavigationProvider({ children }) {
       const targetPath = stack[stack.length - 1];
       if (location.pathname === targetPath) return;
 
+      setDirection("push");
       navigate(targetPath, { replace: false });
-      setTabState(prev => prev + 1); // Trigger re-render
 
       // Restore scroll position after navigation completes
       requestAnimationFrame(() => {
@@ -113,7 +106,7 @@ export function TabNavigationProvider({ children }) {
         }
       });
     },
-    [navigate, location.pathname, getCurrentTab]
+    [navigate, location.pathname, getCurrentTab, setDirection]
   );
 
   const goBack = useCallback(() => {
@@ -123,8 +116,25 @@ export function TabNavigationProvider({ children }) {
     const stack = stacksRef.current[tab];
     if (!stack || stack.length <= 1) return;
 
+    setDirection("pop");
     navigate(-1);
-  }, [getCurrentTab, navigate]);
+  }, [getCurrentTab, navigate, setDirection]);
+
+  // Browser back/forward only updates animation direction; stack sync is handled by location changes.
+  useEffect(() => {
+    const handlePopState = () => {
+      if (popStateFrameRef.current) cancelAnimationFrame(popStateFrameRef.current);
+      popStateFrameRef.current = requestAnimationFrame(() => {
+        setDirection("pop");
+      });
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (popStateFrameRef.current) cancelAnimationFrame(popStateFrameRef.current);
+    };
+  }, [setDirection]);
 
   // Save scroll position when main element scrolls
   useEffect(() => {
@@ -143,7 +153,7 @@ export function TabNavigationProvider({ children }) {
   }, [getCurrentTab]);
 
   return (
-    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab, scrollPositionsRef, componentStateRef }}>
+    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab, scrollPositionsRef }}>
       {children}
     </TabNavigationContext.Provider>
   );

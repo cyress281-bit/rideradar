@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import TopHeader from "@/components/TopHeader";
 import RideNowAlert from "@/components/home/RideNowAlert";
-import GlobalPullToRefresh from "./GlobalPullToRefresh";
 import { base44 } from "@/api/base44Client";
 import { useViewportLock } from "@/hooks/useViewportLock";
 import { useTabNavigation } from "@/context/TabNavigationContext";
-import { useNavigationDirection } from "@/context/NavigationDirectionContext";
 
 export default function AppLayout() {
   const [user, setUser] = useState(null);
-  const location = useLocation();
   const { scrollPositionsRef, getCurrentTab } = useTabNavigation();
-  const { direction } = useNavigationDirection();
 
   useViewportLock();
 
@@ -33,16 +29,14 @@ export default function AppLayout() {
         mainElement.scrollTop = scrollPositionsRef.current[currentTab] || 0;
       });
     }
-  }, [getCurrentTab, scrollPositionsRef, location.pathname]);
+  }, [getCurrentTab, scrollPositionsRef]);
 
   return (
     <div className="min-h-screen bg-background font-inter" style={{ overscrollBehavior: 'none' }}>
       <RideNowAlert user={user} />
       <TopHeader />
-      <main className="pb-20 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
-        <GlobalPullToRefresh>
-          <Outlet key={`${location.pathname}-${direction}`} />
-        </GlobalPullToRefresh>
+      <main className="pb-20" style={{ overscrollBehavior: 'none' }}>
+        <Outlet />
       </main>
       <BottomNav />
     </div>

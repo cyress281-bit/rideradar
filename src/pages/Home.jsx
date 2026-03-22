@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import HomeHeader from "../components/home/HomeHeader";
 import StatsBar from "../components/home/StatsBar";
 import MiniMap from "../components/home/MiniMap";
@@ -15,7 +17,7 @@ export default function Home() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: rides = [] } = useQuery({
+  const { data: rides = [], refetch: refetchRides } = useQuery({
     queryKey: ["rides-home"],
     queryFn: () => base44.entities.Ride.filter(
       { status: { $in: ["meetup", "active"] } },
@@ -23,6 +25,8 @@ export default function Home() {
       50
     ),
   });
+
+  const { scrollContainerRef, progress, isRefreshing, handlers } = usePullToRefresh(() => refetchRides());
 
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
@@ -32,7 +36,25 @@ export default function Home() {
   const totalRiders = rides.reduce((acc, r) => acc + (r.rider_count || 1), 0);
 
   return (
-    <div className="min-h-screen relative">
+    <div
+      ref={scrollContainerRef}
+      className="min-h-screen relative"
+      {...handlers}
+    >
+      {/* Pull-to-refresh indicator */}
+      {progress > 0 && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full"
+            style={{
+              rotate: progress * 360,
+              opacity: progress,
+            }}
+          />
+        </div>
+      )}
       <HomeHeader username={user?.username} />
       <StatsBar
         totalRiders={totalRiders}
