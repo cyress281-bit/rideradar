@@ -62,3 +62,5 @@ const MeetupPin = memo(
 );
 
 MeetupPin.displayName = "MeetupPin";
+
+export default MeetupPin;
