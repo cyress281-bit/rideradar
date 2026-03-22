@@ -2,13 +2,17 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { User, Minus } from "lucide-react";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
 import { getAppSettings } from "@/lib/appSettings";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function HomeHeader({ username }) {
   const [settings, setSettings] = useState({ name: "RideRadar", logo_url: null });
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     getAppSettings().then(setSettings);
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   return (
@@ -37,12 +41,15 @@ export default function HomeHeader({ username }) {
           <p className="text-[11px] text-muted-foreground -mt-0.5">Group rides near you</p>
         </div>
       </div>
-      <Link
-        to="/profile"
-        className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-      >
-        <User className="w-4 h-4 text-foreground" />
-      </Link>
+      <div className="flex items-center gap-2">
+        {user && <NotificationBell user={user} />}
+        <Link
+          to="/profile"
+          className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+        >
+          <User className="w-4 h-4 text-foreground" />
+        </Link>
+      </div>
     </div>
   );
 }
