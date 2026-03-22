@@ -79,11 +79,11 @@ function App() {
       <SystemAppearanceSync />
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <TabNavigationProvider>
-            <NavigationDirectionProvider>
+          <NavigationDirectionProvider>
+            <TabNavigationProvider>
               <AuthenticatedApp />
-            </NavigationDirectionProvider>
-          </TabNavigationProvider>
+            </TabNavigationProvider>
+          </NavigationDirectionProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>
