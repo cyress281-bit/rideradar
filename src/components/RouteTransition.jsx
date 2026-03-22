@@ -2,8 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigationDirection } from "@/context/NavigationDirectionContext";
 
 export default function RouteTransition({ children }) {
-  const { getDirection } = useNavigationDirection();
-  const direction = getDirection();
+  const { direction } = useNavigationDirection();
 
   // Push: slide in from right
   // Pop: slide out to right (exiting) / slide in from left (entering)
