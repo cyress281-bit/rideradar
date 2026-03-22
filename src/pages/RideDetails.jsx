@@ -76,7 +76,7 @@ export default function RideDetails() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["participants", rideId] });
-      toast({ title: "Join request sent!" });
+      toast({ title: "You joined the ride!" });
     },
   });
 
