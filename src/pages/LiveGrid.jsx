@@ -311,6 +311,7 @@ export default function LiveGrid() {
                     ? "bg-green-500/10 border-green-500/30 text-green-400"
                     : "bg-card/90 border-border text-muted-foreground"
                 }`}
+                aria-label={showOtherRiders ? "Hide other riders" : "Show other riders"}
               >
                 {showOtherRiders ? "👁️ Tracking" : "👁️ Hidden"}
               </button>

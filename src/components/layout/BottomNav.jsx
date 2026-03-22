@@ -44,7 +44,8 @@ export default function BottomNav() {
               key={item.id}
               onClick={() => switchTab(item.id)}
               className="flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px]"
-              aria-label={item.label}
+              aria-label={`${item.label} tab`}
+              aria-current={isActive ? "page" : undefined}
             >
               {isActive && (
                 <motion.div

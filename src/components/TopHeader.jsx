@@ -19,7 +19,7 @@ export default function TopHeader() {
       <button
         onClick={goBack}
         className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors min-h-[44px] min-w-[44px]"
-        aria-label="Go back"
+        aria-label="Navigate back to previous screen"
       >
         <ArrowLeft className="w-4 h-4" />
       </button>

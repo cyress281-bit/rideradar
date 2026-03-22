@@ -41,7 +41,8 @@ export default function NotificationBell({ user }) {
         whileTap={{ scale: 0.95 }}
         onClick={() => setShowPanel(!showPanel)}
         className="relative w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-        aria-label="Notifications"
+        aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+        aria-pressed={showPanel}
       >
         <Bell className="w-4 h-4 text-foreground" />
         {unreadCount > 0 && (
