@@ -81,7 +81,7 @@ export default function LiveGrid() {
 
       {/* Ride count badge */}
       <div className="absolute top-4 right-4 z-[1000] bg-card/90 backdrop-blur-xl rounded-xl px-3 py-2 border border-border">
-        <span className="text-xs font-semibold text-foreground">{rides.length} on radar</span>
+        <span className="text-xs font-semibold text-foreground">{rides.length} on grid</span>
       </div>
 
       {/* Selected ride panel */}

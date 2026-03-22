@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import RideCard from "../components/rides/RideCard";
+import CreateRideButton from "../components/rides/CreateRideButton";
 
 export default function Rides() {
   const [user, setUser] = useState(null);
@@ -79,6 +80,7 @@ export default function Rides() {
         </TabsContent>
       </Tabs>
 
+      <CreateRideButton />
     </div>
   );
 }
