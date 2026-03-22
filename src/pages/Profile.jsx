@@ -123,7 +123,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none' }}>
       <div className="px-5 space-y-6">
         {/* Avatar area with upload */}
         <motion.div
