@@ -36,6 +36,8 @@ export default function CreateRide() {
   const [submitting, setSubmitting] = useState(false);
   const [position, setPosition] = useState(null);
   const [rideMode, setRideMode] = useState("now"); // "now" | "schedule"
+  const [rideType, setRideType] = useState("casual"); // "casual" | "planned_event"
+  const [eventFormat, setEventFormat] = useState("stationary"); // "stationary" | "route"
   const [form, setForm] = useState({
     title: "",
     start_time: "",
@@ -43,6 +45,7 @@ export default function CreateRide() {
     vibe: "",
     requirements: "",
     meetup_address: "",
+    location_name: "",
   });
 
   useEffect(() => {
