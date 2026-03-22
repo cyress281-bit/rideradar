@@ -9,7 +9,6 @@ import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function EventRSVPCard({ event, user, myStatus, onStatusChange }) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [optimisticStatus, setOptimisticStatus] = React.useState(myStatus);
 
@@ -18,8 +17,8 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
     route: "🛣️",
   };
 
-  const rsvpMutation = useMutation({
-    mutationFn: async (newStatus) => {
+  const rsvpMutation = useMutationWithOptimism(
+    async (newStatus) => {
       const username = user.username || user.email?.split("@")[0] || "rider";
       const existing = await base44.entities.RideParticipant.filter({
         ride_id: event.id,
@@ -38,23 +37,20 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
         });
       }
     },
-    onMutate: async (newStatus) => {
-      const previousStatus = optimisticStatus;
-      setOptimisticStatus(newStatus);
-      toast({
-        title: newStatus === "approved" ? "RSVP confirmed!" : "RSVP cancelled",
-      });
-      return previousStatus;
-    },
-    onError: (err, newStatus, previousStatus) => {
-      setOptimisticStatus(previousStatus);
-      toast({ title: "Failed to update RSVP", variant: "destructive" });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-participations"] });
-      onStatusChange?.(optimisticStatus);
-    },
-  });
+    {
+      onMutate: (newStatus) => {
+        setOptimisticStatus(newStatus);
+      },
+      onError: (err, newStatus) => {
+        setOptimisticStatus(myStatus);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["my-participations"] });
+        onStatusChange?.(optimisticStatus);
+      },
+      successMessage: optimisticStatus === "approved" ? "RSVP confirmed!" : "RSVP cancelled",
+    }
+  );
 
   const handleRSVP = (status) => {
     if (!user) return;
@@ -115,17 +111,19 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
         <div className="flex gap-2 pt-2">
           <Button
             onClick={() => handleRSVP("approved")}
-            className="flex-1 h-8 bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-semibold border border-green-500/30"
+            disabled={rsvpMutation.isPending}
+            className="flex-1 h-8 bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-semibold border border-green-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             variant="outline"
           >
-            <Check className="w-3 h-3 mr-1" /> Going
+            <Check className="w-3 h-3 mr-1" aria-hidden="true" /> Going
           </Button>
           <Button
             onClick={() => handleRSVP("declined")}
-            className="flex-1 h-8 bg-red-600/20 text-red-400 hover:bg-red-600/30 text-xs font-semibold border border-red-500/30"
+            disabled={rsvpMutation.isPending}
+            className="flex-1 h-8 bg-red-600/20 text-red-400 hover:bg-red-600/30 text-xs font-semibold border border-red-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             variant="outline"
           >
-            <X className="w-3 h-3 mr-1" /> Can't Go
+            <X className="w-3 h-3 mr-1" aria-hidden="true" /> Can't Go
           </Button>
         </div>
       ) : (
