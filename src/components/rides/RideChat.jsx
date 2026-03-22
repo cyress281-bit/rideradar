@@ -185,14 +185,17 @@ export default function RideChat({ rideId, user, canChat }) {
               }
               className="bg-secondary border-border flex-1 text-sm h-9"
               maxLength={280}
+              aria-label="Type a ride message"
             />
             <Button
                onClick={sendMessage}
                disabled={!text.trim() || messageMutation.isPending}
                size="icon"
                className="h-9 w-9 bg-primary hover:bg-primary/90 flex-shrink-0"
+               aria-label="Send message"
+               aria-busy={messageMutation.isPending}
              >
-               <Send className="w-3.5 h-3.5" />
+               <Send className="w-3.5 h-3.5" aria-hidden="true" />
              </Button>
           </div>
         </div>
