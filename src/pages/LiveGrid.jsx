@@ -257,7 +257,7 @@ export default function LiveGrid() {
         ))}
 
         {/* Active ride: show live rider dots */}
-        {activeRides.map((ride) =>
+        {showOtherRiders && activeRides.map((ride) =>
           riderLocations
             .filter((l) => l.ride_id === ride.id && l.is_active)
             .map((loc) => (
