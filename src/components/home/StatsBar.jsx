@@ -1,12 +1,13 @@
 import React from "react";
-import { Users, Bike, MapPin } from "lucide-react";
+import { Users, Radio } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function StatsBar({ totalRiders, activeRides, meetups }) {
+  const onlineUsers = activeRides + meetups;
+
   const stats = [
     { icon: Users, label: "Nearby (15mi)", value: totalRiders, color: "text-primary" },
-    { icon: Bike, label: "Riding", value: activeRides, color: "text-green-400" },
-    { icon: MapPin, label: "Meetups", value: meetups, color: "text-blue-400" },
+    { icon: Radio, label: "Online Now", value: onlineUsers, color: "text-green-400" },
   ];
 
   return (
