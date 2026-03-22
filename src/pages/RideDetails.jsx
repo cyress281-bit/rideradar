@@ -11,6 +11,7 @@ import {
   ArrowLeft, MapPin, Clock, Users, Bike, Shield,
   CheckCircle, XCircle, Play, Square, MessageSquare
 } from "lucide-react";
+import RideChat from "@/components/rides/RideChat";
 import { useToast } from "@/components/ui/use-toast";
 import { format, formatDistanceToNow, isPast, addMinutes } from "date-fns";
 import { motion } from "framer-motion";
