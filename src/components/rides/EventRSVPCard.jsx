@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, Calendar, Check, X } from "lucide-react";
 import { format } from "date-fns";
-import { useToast } from "@/components/ui/use-toast";
 
 export default function EventRSVPCard({ event, user, myStatus, onStatusChange }) {
   const queryClient = useQueryClient();
@@ -41,7 +41,7 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
       onMutate: (newStatus) => {
         setOptimisticStatus(newStatus);
       },
-      onError: (err, newStatus) => {
+      onError: () => {
         setOptimisticStatus(myStatus);
       },
       onSuccess: () => {
@@ -91,16 +91,16 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
       {/* Details */}
       <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Calendar className="w-3.5 h-3.5" />
+          <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
           {format(new Date(event.start_time), "MMM d, h:mm a")}
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Users className="w-3.5 h-3.5" />
+          <Users className="w-3.5 h-3.5" aria-hidden="true" />
           {event.rider_count} rider{event.rider_count !== 1 ? "s" : ""}
         </div>
         {event.meetup_address && (
           <div className="flex items-center gap-1.5 text-muted-foreground col-span-2">
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
             {event.meetup_address}
           </div>
         )}
@@ -130,7 +130,7 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
         <Button
           onClick={() => handleRSVP("declined")}
           variant="ghost"
-          className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+          className="w-full h-8 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           Change RSVP
         </Button>

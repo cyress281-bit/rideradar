@@ -98,7 +98,14 @@
     @apply select-none;
   }
 
-  button:focus-visible, [role="button"]:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  /* Visible focus states for accessibility */
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
   }
 
