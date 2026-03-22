@@ -3,6 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const TabNavigationContext = createContext();
 
+// Root paths for each tab - only hide back button on these
+const TAB_ROOT_PATHS = {
+  home: "/",
+  grid: "/grid",
+  rides: "/rides",
+  messages: "/messages",
+  profile: "/profile",
+};
+
 export function TabNavigationProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,6 +34,12 @@ export function TabNavigationProvider({ children }) {
     if (path.startsWith("/create-ride")) return "rides";
     return null;
   }, [location.pathname]);
+
+  const isOnRootTab = useCallback(() => {
+    const tab = getCurrentTab();
+    if (!tab) return false;
+    return location.pathname === TAB_ROOT_PATHS[tab];
+  }, [getCurrentTab, location.pathname]);
 
   const switchTab = useCallback((tabName) => {
     const stacks = stacksRef.current;
@@ -49,7 +64,7 @@ export function TabNavigationProvider({ children }) {
     }
   }, [getCurrentTab, navigate]);
 
-  // Sync stack on location change
+  // Sync stack on location change - handle nested routes
   useEffect(() => {
     const tab = getCurrentTab();
     if (!tab) return;
@@ -62,6 +77,19 @@ export function TabNavigationProvider({ children }) {
       isPopstateRef.current = false;
       return;
     }
+
+    // Verify stack integrity - stack should only contain paths within the current tab
+    const isPathInTab = (() => {
+      if (tab === "home") return currentPath === "/";
+      if (tab === "grid") return currentPath.startsWith("/grid");
+      if (tab === "rides") return currentPath.startsWith("/rides");
+      if (tab === "messages") return currentPath.startsWith("/messages");
+      if (tab === "profile") return currentPath.startsWith("/profile");
+      if (tab === "rides" && currentPath === "/create-ride") return true;
+      return false;
+    })();
+
+    if (!isPathInTab) return;
 
     // Add new path to stack if not already the last item
     if (stack[stack.length - 1] !== currentPath) {
@@ -88,7 +116,7 @@ export function TabNavigationProvider({ children }) {
   }, [getCurrentTab]);
 
   return (
-    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab }}>
+    <TabNavigationContext.Provider value={{ switchTab, goBack, getCurrentTab, isOnRootTab }}>
       {children}
     </TabNavigationContext.Provider>
   );
