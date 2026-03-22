@@ -77,7 +77,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       className="absolute bottom-20 left-3 right-3 z-[1000] bg-card/97 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl overflow-hidden"
     >
       {/* Top accent */}
-      <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
+      <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} aria-hidden="true" />
 
       <div className="p-4">
         <button
@@ -89,15 +89,15 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
         </button>
 
         {/* Status + Title */}
-        <div className="flex items-center gap-2 mb-0.5 pr-8">
-          {ride.status === "active" ? (
-            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-            </span>
-          ) : (
-            <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
-          )}
+         <div className="flex items-center gap-2 mb-0.5 pr-8">
+           {ride.status === "active" ? (
+             <span className="relative flex h-2.5 w-2.5 flex-shrink-0" aria-hidden="true">
+               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+             </span>
+           ) : (
+             <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
+           )}
           <h3 className="font-bold text-base leading-tight">{ride.title}</h3>
         </div>
         <p className="text-xs text-muted-foreground mb-3">by @{ride.host_username} · {timeLabel}</p>
@@ -146,39 +146,42 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
         )}
 
         {/* Action buttons */}
-        <div className="flex gap-2">
-          {/* Quick join */}
-          {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
-            <button
-              onClick={handleJoin}
-              disabled={joinMutation.isPending || joined}
-              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all ${
-                joined
-                  ? "bg-green-500/15 text-green-400 border-green-500/20 flex-1"
-                  : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 flex-1"
-              }`}
-            >
-              {joined ? (
-                <><Check className="w-4 h-4" aria-hidden="true" /> You're In!</>
-              ) : joinMutation.isPending ? (
-                "Joining..."
-              ) : (
-                <><UserPlus className="w-4 h-4" aria-hidden="true" /> Quick Join</>
-              )}
-            </button>
-          )}
+         <div className="flex gap-2">
+           {/* Quick join */}
+           {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
+             <button
+               onClick={handleJoin}
+               disabled={joinMutation.isPending || joined}
+               className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all min-h-[44px] ${
+                 joined
+                   ? "bg-green-500/15 text-green-400 border-green-500/20 flex-1"
+                   : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 flex-1"
+               }`}
+               aria-label={joined ? "You have joined this ride" : "Join this ride"}
+               aria-busy={joinMutation.isPending}
+             >
+               {joined ? (
+                 <><Check className="w-4 h-4" aria-hidden="true" /> You're In!</>
+               ) : joinMutation.isPending ? (
+                 "Joining..."
+               ) : (
+                 <><UserPlus className="w-4 h-4" aria-hidden="true" /> Quick Join</>
+               )}
+             </button>
+           )}
 
-          {/* View details */}
-            <button
-              onClick={() => navigate(`/rides/${ride.id}`)}
-              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors ${
-                isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
-              }`}
-            >
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              {isHost ? "Manage Ride" : "Details"}
-            </button>
-        </div>
+           {/* View details */}
+             <button
+               onClick={() => navigate(`/rides/${ride.id}`)}
+               className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors min-h-[44px] ${
+                 isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
+               }`}
+               aria-label={`${isHost ? "Manage" : "View details for"} ride: ${ride.title}`}
+             >
+               <ArrowRight className="w-4 h-4" aria-hidden="true" />
+               {isHost ? "Manage Ride" : "Details"}
+             </button>
+         </div>
       </div>
     </motion.div>
   );
