@@ -31,13 +31,16 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({
     username: "",
+    profile_pic_url: "",
     bike_make: "",
     bike_model: "",
     bike_year: "",
     bike_class: "",
+    motorcycle_models: [],
     ride_preferences: [],
     invisible_mode: false,
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then((u) => {
