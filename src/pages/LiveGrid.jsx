@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio } from "lucide-react";
+import { rafThrottle } from "@/lib/throttle";
 import MeetupPin from "@/components/map/MeetupPin";
 import ActiveRiderDot from "@/components/map/ActiveRiderDot";
 import ActiveRidePin from "@/components/map/ActiveRidePin";
@@ -104,11 +105,13 @@ export default function LiveGrid() {
     refetchInterval: 5000,
   });
 
-  // Real-time subscription to RiderLocation changes
+  // Real-time subscription to RiderLocation changes with throttling for smooth 60fps performance
   useEffect(() => {
-    const unsub = base44.entities.RiderLocation.subscribe(() => {
+    const throttledUpdate = rafThrottle(() => {
       queryClient.invalidateQueries({ queryKey: ["rider-locations"] });
     });
+    
+    const unsub = base44.entities.RiderLocation.subscribe(throttledUpdate);
     return unsub;
   }, [queryClient]);
 
@@ -201,11 +204,17 @@ export default function LiveGrid() {
     }
   }, [user, rides, allParticipants, checkedInRides, riderLocations, upsertLocation, queryClient]);
 
-  // Start GPS watch
+  // Start GPS watch with throttled position updates to prevent excessive handler calls
   useEffect(() => {
     if (!navigator.geolocation) return;
+    
+    // Throttle position updates to prevent excessive handler invocations
+    const throttledPositionUpdate = rafThrottle((lat, lng) => {
+      handlePositionUpdate(lat, lng);
+    });
+    
     watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => handlePositionUpdate(pos.coords.latitude, pos.coords.longitude),
+      (pos) => throttledPositionUpdate(pos.coords.latitude, pos.coords.longitude),
       () => {},
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     );
