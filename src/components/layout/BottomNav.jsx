@@ -1,17 +1,35 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Map, Navigation, User } from "lucide-react";
+import { Home, Map, Navigation, User, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 
 const navItems = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/grid", icon: Map, label: "Live Radar" },
   { path: "/rides", icon: Navigation, label: "Rides" },
+  { path: "/messages", icon: MessageCircle, label: "Messages", badge: "unreadCount" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 
 export default function BottomNav() {
   const location = useLocation();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: directMessages = [] } = useQuery({
+    queryKey: ["dm-unread", user?.email],
+    queryFn: () => {
+      if (!user?.email) return [];
+      return base44.entities.DirectMessage.filter({ recipient_email: user.email, read: false });
+    },
+    enabled: !!user?.email,
+    refetchInterval: 5000,
+  });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border safe-area-bottom">
@@ -30,11 +48,18 @@ export default function BottomNav() {
                   className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full"
                 />
               )}
-              <item.icon
-                className={`w-5 h-5 transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-              />
+              <div className="relative">
+                <item.icon
+                  className={`w-5 h-5 transition-colors ${
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  }`}
+                />
+                {item.badge === "unreadCount" && directMessages.length > 0 && (
+                  <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
+                    {directMessages.length > 9 ? "9+" : directMessages.length}
+                  </div>
+                )}
+              </div>
               <span
                 className={`text-[10px] mt-1 font-medium transition-colors ${
                   isActive ? "text-primary" : "text-muted-foreground"
