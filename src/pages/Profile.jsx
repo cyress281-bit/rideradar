@@ -65,14 +65,31 @@ export default function Profile() {
     enabled: !!user?.email,
   });
 
+  const handlePicUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setForm((f) => ({ ...f, profile_pic_url: file_url }));
+      toast({ title: "Photo uploaded!" });
+    } catch (err) {
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       await base44.auth.updateMe({
         username: form.username,
+        profile_pic_url: form.profile_pic_url || undefined,
         bike_make: form.bike_make,
         bike_model: form.bike_model,
         bike_year: form.bike_year ? parseInt(form.bike_year) : undefined,
         bike_class: form.bike_class || undefined,
+        motorcycle_models: form.motorcycle_models,
         ride_preferences: form.ride_preferences,
         invisible_mode: form.invisible_mode,
       });
