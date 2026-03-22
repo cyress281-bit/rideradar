@@ -63,13 +63,13 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
 
       <div className="p-4">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-          aria-label="Close ride panel"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+         <button
+           onClick={onClose}
+           className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+           aria-label="Close ride information panel"
+         >
+           <X className="w-3.5 h-3.5" aria-hidden="true" />
+         </button>
 
         {/* Status + Title */}
         <div className="flex items-center gap-2 mb-0.5 pr-8">

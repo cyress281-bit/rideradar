@@ -12,11 +12,13 @@ export default function SelectDrawer({ value, onValueChange, options, placeholde
       <button
         onClick={() => setIsOpen(true)}
         className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm flex items-center justify-between hover:bg-accent/5 transition-colors"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
       >
         <span className={selectedOption ? "text-foreground" : "text-muted-foreground"}>
           {selectedOption?.label || placeholder || "Select..."}
         </span>
-        <ChevronDown className="w-4 h-4 opacity-50" />
+        <ChevronDown className="w-4 h-4 opacity-50" aria-hidden="true" />
       </button>
 
       <AnimatePresence>

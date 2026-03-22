@@ -315,18 +315,18 @@ export default function RideDetails() {
                       variant="ghost"
                       className="min-h-[44px] min-w-[44px] p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"
                       onClick={() => approveMutation.mutate(p.id)}
-                      aria-label="Approve rider"
+                      aria-label={`Approve ${p.username} to join ride`}
                     >
-                      <CheckCircle className="w-4 h-4" />
+                      <CheckCircle className="w-4 h-4" aria-hidden="true" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       className="min-h-[44px] min-w-[44px] p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       onClick={() => declineMutation.mutate(p.id)}
-                      aria-label="Decline rider"
+                      aria-label={`Decline ${p.username} from joining ride`}
                     >
-                      <XCircle className="w-4 h-4" />
+                      <XCircle className="w-4 h-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>
@@ -350,9 +350,9 @@ export default function RideDetails() {
                 size="sm" 
                 variant="secondary" 
                 className="min-h-[44px] min-w-[44px]"
-                aria-label="Send status message"
+                aria-label="Send status update to riders"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
             <div className="flex gap-2">
