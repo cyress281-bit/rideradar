@@ -251,6 +251,14 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Ride History */}
+        <div>
+          <Label className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Route className="w-3.5 h-3.5" /> Ride History
+          </Label>
+          {user && <RideHistory userEmail={user.email} />}
+        </div>
+
         {/* Blocked users */}
         {blocks.length > 0 && (
           <div>
