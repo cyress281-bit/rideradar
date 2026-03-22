@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { rafThrottle } from "@/lib/throttle";
+import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
 // Lazy-load map components for code splitting (heavy with Leaflet dependencies)
 const MeetupPin = lazy(() => import("@/components/map/MeetupPin"));
@@ -257,7 +258,7 @@ export default function LiveGrid() {
         zoomControl={false}
         attributionControl={false}
       >
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+        <TileLayer {...mapTileLayerProps} />
         <MapAutoCenter rides={rides} />
         <Suspense fallback={null}>
           <MarkerClusterGroup markers={clusterMarkers} />

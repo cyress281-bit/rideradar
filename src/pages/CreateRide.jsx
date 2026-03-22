@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import SelectDrawer from "@/components/SelectDrawer";
 import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
 const pinIcon = L.divIcon({
   className: "custom-marker",
@@ -137,7 +138,7 @@ export default function CreateRide() {
                 zoomControl={false}
                 attributionControl={false}
               >
-                <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                <TileLayer {...mapTileLayerProps} />
                 <LocationPicker position={position} setPosition={setPosition} />
               </MapContainer>
             </Suspense>

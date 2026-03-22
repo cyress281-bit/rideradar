@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { X, ChevronRight } from "lucide-react";
+import LiveRegion from "@/components/accessibility/LiveRegion";
 
 export default function NotificationPanel({ notifications, user, onClose }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [liveMessage, setLiveMessage] = useState("");
+  const previousUnreadCountRef = useRef(null);
 
   const markAsReadMutation = useMutation({
     mutationFn: (notifId) =>
@@ -25,13 +28,34 @@ export default function NotificationPanel({ notifications, user, onClose }) {
     onClose();
   };
 
+  useEffect(() => {
+    const unreadCount = notifications.filter((notif) => !notif.read).length;
+
+    if (previousUnreadCountRef.current === null) {
+      previousUnreadCountRef.current = unreadCount;
+      return;
+    }
+
+    if (unreadCount > previousUnreadCountRef.current && notifications[0]) {
+      setLiveMessage(`New notification. ${notifications[0].message}`);
+    } else if (unreadCount < previousUnreadCountRef.current) {
+      setLiveMessage(`${unreadCount} unread notifications remaining.`);
+    }
+
+    previousUnreadCountRef.current = unreadCount;
+  }, [notifications]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className="absolute top-12 right-0 w-80 bg-card border border-border rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Notifications"
     >
+      <LiveRegion message={liveMessage} politeness="polite" atomic={true} />
       {/* Header */}
       <div className="sticky top-0 bg-card border-b border-border/50 p-3 flex items-center justify-between">
         <h3 className="font-bold text-sm">Notifications</h3>
@@ -49,7 +73,7 @@ export default function NotificationPanel({ notifications, user, onClose }) {
           <p className="text-xs text-muted-foreground">No notifications yet</p>
         </div>
       ) : (
-        <div className="divide-y divide-border/30">
+        <div className="divide-y divide-border/30" role="list" aria-label="Notification list">
           {notifications.map((notif) => (
             <motion.button
               key={notif.id}

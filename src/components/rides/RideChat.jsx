@@ -5,6 +5,7 @@ import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { Send, AlertTriangle, Navigation, MapPin, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import LiveRegion from "@/components/accessibility/LiveRegion";
 import { formatDistanceToNow } from "date-fns";
 
 const TAG_OPTIONS = [
@@ -29,7 +30,10 @@ export default function RideChat({ rideId, user, canChat }) {
    const queryClient = useQueryClient();
    const [text, setText] = useState("");
    const [tag, setTag] = useState("chat");
+   const [liveMessage, setLiveMessage] = useState("");
    const bottomRef = useRef(null);
+   const lastAnnouncedMessageIdRef = useRef(null);
+   const hasLoadedMessagesRef = useRef(false);
 
   const { data: messages = [] } = useQuery({
     queryKey: ["ride-chat", rideId],
@@ -52,6 +56,25 @@ export default function RideChat({ rideId, user, canChat }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  // Announce newly added chat messages without re-reading the full thread.
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const latestMessage = messages[messages.length - 1];
+
+    if (!hasLoadedMessagesRef.current) {
+      hasLoadedMessagesRef.current = true;
+      lastAnnouncedMessageIdRef.current = latestMessage.id;
+      return;
+    }
+
+    if (latestMessage.id === lastAnnouncedMessageIdRef.current) return;
+
+    lastAnnouncedMessageIdRef.current = latestMessage.id;
+    const messagePrefix = latestMessage.user_email === user?.email ? "Message sent" : `New ${latestMessage.tag === "chat" ? "chat" : latestMessage.tag} message from ${latestMessage.username}`;
+    setLiveMessage(`${messagePrefix}. ${latestMessage.text.slice(0, 120)}`);
+  }, [messages, user?.email]);
 
   const messageMutation = useMutationWithOptimism(
     async (messageData) => {
@@ -103,6 +126,7 @@ export default function RideChat({ rideId, user, canChat }) {
 
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-secondary/20 overflow-hidden">
+      <LiveRegion message={liveMessage} politeness="polite" atomic={true} />
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-secondary/30">
         <MessageSquare className="w-4 h-4 text-primary" />
@@ -111,7 +135,14 @@ export default function RideChat({ rideId, user, canChat }) {
       </div>
 
       {/* Messages */}
-      <div className="flex flex-col gap-2.5 p-3 h-64 overflow-y-auto">
+      <div
+        className="flex flex-col gap-2.5 p-3 h-64 overflow-y-auto"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-atomic="false"
+        aria-label="Ride chat messages"
+      >
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-center py-8">
             <div>

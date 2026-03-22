@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Expand } from "lucide-react";
 import L from "leaflet";
+import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
 const meetupIcon = L.divIcon({
   className: "custom-marker",
@@ -45,7 +46,7 @@ export default function MiniMap({ rides }) {
           doubleClickZoom={false}
           touchZoom={false}
         >
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+          <TileLayer {...mapTileLayerProps} />
           {markers.map((m, i) => (
             <Marker key={i} position={m.position} icon={m.icon}>
               <Popup className="dark-popup">

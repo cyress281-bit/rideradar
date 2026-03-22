@@ -34,12 +34,8 @@ export function TabNavigationProvider({ children }) {
     profile: 0,
   });
   
-  // Strict history management: prevent browser back from breaking stacks
-  const historyStateRef = useRef(0);
-  const isFromPopStateRef = useRef(false);
-  const isNavigatingRef = useRef(false);
-  const pendingPopStateRef = useRef(false);
-  const popStateTimeoutRef = useRef(null);
+  // Keep navigation direction separate; tab stacks always sync from the real router location.
+  const popStateFrameRef = useRef(null);
 
   const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
@@ -61,7 +57,7 @@ export function TabNavigationProvider({ children }) {
     return location.pathname === TAB_ROOT_PATHS[tab];
   }, [getCurrentTab, location.pathname]);
 
-  // Strict history stack management: ensure stacks stay synchronized with actual history
+  // Always derive the current tab stack from the actual router location.
   useEffect(() => {
     const tab = getTabFromPath(location.pathname);
     if (!tab) return;
@@ -69,28 +65,15 @@ export function TabNavigationProvider({ children }) {
     const stack = stacksRef.current[tab];
     if (!stack) return;
 
-    // Handle popstate (browser back button or iOS swipe)
-    if (isFromPopStateRef.current) {
-      isFromPopStateRef.current = false;
-      // Verify the current path exists in the stack
-      const lastPath = stack[stack.length - 1];
-      if (lastPath !== location.pathname) {
-        // Path mismatch: rebuild stack to match actual history
-        stack.pop();
-      }
-      return;
-    }
+    const existingIndex = stack.lastIndexOf(location.pathname);
 
-    // Handle programmatic navigation
-    if (isNavigatingRef.current) {
-      isNavigatingRef.current = false;
-      return;
-    }
-
-    // New navigation: ensure path is added to stack only once
-    const lastPath = stack[stack.length - 1];
-    if (lastPath !== location.pathname) {
+    if (existingIndex === -1) {
       stack.push(location.pathname);
+      return;
+    }
+
+    if (existingIndex !== stack.length - 1) {
+      stacksRef.current[tab] = stack.slice(0, existingIndex + 1);
     }
   }, [location.pathname, getTabFromPath]);
 
@@ -112,8 +95,6 @@ export function TabNavigationProvider({ children }) {
       const targetPath = stack[stack.length - 1];
       if (location.pathname === targetPath) return;
 
-      // Mark as programmatic navigation to prevent stack duplication
-      isNavigatingRef.current = true;
       setDirection("push");
       navigate(targetPath, { replace: false });
 
@@ -135,39 +116,25 @@ export function TabNavigationProvider({ children }) {
     const stack = stacksRef.current[tab];
     if (!stack || stack.length <= 1) return;
 
-    // Pop from stack and initiate navigation
-    stack.pop();
-    isFromPopStateRef.current = true;
-    isNavigatingRef.current = true;
     setDirection("pop");
     navigate(-1);
   }, [getCurrentTab, navigate, setDirection]);
 
-  // Handle external back gestures with collision detection for rapid back-button taps
+  // Browser back/forward only updates animation direction; stack sync is handled by location changes.
   useEffect(() => {
     const handlePopState = () => {
-      // Guard against rapid back-gesture collisions
-      if (pendingPopStateRef.current) {
-        // Collision detected: prevent stack desync by ignoring this popstate
-        return;
-      }
-
-      pendingPopStateRef.current = true;
-      isFromPopStateRef.current = true;
-
-      // Clear pending state after brief delay to allow browser history to settle
-      if (popStateTimeoutRef.current) clearTimeout(popStateTimeoutRef.current);
-      popStateTimeoutRef.current = setTimeout(() => {
-        pendingPopStateRef.current = false;
-      }, 100);
+      if (popStateFrameRef.current) cancelAnimationFrame(popStateFrameRef.current);
+      popStateFrameRef.current = requestAnimationFrame(() => {
+        setDirection("pop");
+      });
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      if (popStateTimeoutRef.current) clearTimeout(popStateTimeoutRef.current);
+      if (popStateFrameRef.current) cancelAnimationFrame(popStateFrameRef.current);
     };
-  }, []);
+  }, [setDirection]);
 
   // Save scroll position when main element scrolls
   useEffect(() => {

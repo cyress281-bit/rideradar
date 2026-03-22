@@ -16,6 +16,7 @@ import RideChat from "@/components/rides/RideChat";
 import { useToast } from "@/components/ui/use-toast";
 import { format, formatDistanceToNow, isPast, addMinutes } from "date-fns";
 import { motion } from "framer-motion";
+import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
 const markerIcon = L.divIcon({
   className: "custom-marker",
@@ -40,7 +41,7 @@ const RideMapComponent = memo(({ ride }) => (
     zoomControl={false}
     attributionControl={false}
   >
-    <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+    <TileLayer {...mapTileLayerProps} />
     <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
   </MapContainer>
 ), (prevProps, nextProps) => {
