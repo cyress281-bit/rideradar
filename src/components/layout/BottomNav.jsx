@@ -51,19 +51,18 @@ export default function BottomNav() {
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2 relative">
         {leftItems.map(renderNavItem)}
 
-        {/* Create Ride Button — sits halfway into the bar */}
+        {/* Create Ride Button — floats halfway out of the nav bar */}
         <div className="flex flex-col items-center justify-center flex-1 relative">
-          <div className="absolute -top-5">
+          <div className="absolute -top-7">
             <Link to="/create-ride">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative flex flex-col items-center"
+                className="relative flex flex-col items-center gap-1"
               >
-                <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-40 scale-110" />
-                <div className="relative bg-primary rounded-full px-4 h-10 flex items-center justify-center gap-1.5 shadow-lg shadow-primary/30 border border-primary/60">
-                  <Plus className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
-                  <span className="text-[11px] font-bold text-primary-foreground whitespace-nowrap">Create Ride</span>
+                <div className="absolute inset-0 bg-primary rounded-full blur-lg opacity-50" />
+                <div className="relative w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/40 border-2 border-primary/60">
+                  <span className="text-[9px] font-bold text-primary-foreground text-center leading-tight">Create{"\n"}Ride</span>
                 </div>
               </motion.div>
             </Link>
