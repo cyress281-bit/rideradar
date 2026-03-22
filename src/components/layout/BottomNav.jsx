@@ -1,12 +1,12 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Map, Route, User } from "lucide-react";
+import { Home, Map, Navigation, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/grid", icon: Map, label: "Live Grid" },
-  { path: "/rides", icon: Route, label: "Rides" },
+  { path: "/rides", icon: Navigation, label: "Rides" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 
