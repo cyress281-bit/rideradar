@@ -7,7 +7,7 @@ import StatsBar from "../components/home/StatsBar";
 import MiniMap from "../components/home/MiniMap";
 import RideSection from "../components/home/RideSection";
 import RidePreviewCard from "../components/rides/RidePreviewCard";
-import CreateRideButton from "../components/rides/CreateRideButton";
+
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -114,7 +114,6 @@ export default function Home() {
       </div>
 
       <div className="h-24" />
-      <CreateRideButton />
     </div>
   );
 }
