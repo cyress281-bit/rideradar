@@ -14,6 +14,8 @@ const TAB_ROOT_PATHS = {
 export function TabNavigationProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Initialize and maintain stable tab stacks
   const stacksRef = useRef({
     home: ["/"],
     grid: ["/grid"],
@@ -21,6 +23,7 @@ export function TabNavigationProvider({ children }) {
     messages: ["/messages"],
     profile: ["/profile"],
   });
+  
   const scrollPositionsRef = useRef({
     home: 0,
     grid: 0,
@@ -28,10 +31,12 @@ export function TabNavigationProvider({ children }) {
     messages: 0,
     profile: 0,
   });
-  const lastNavigationTimeRef = useRef(0);
+  
+  // Track previous location to detect actual navigation changes
+  const previousPathRef = useRef(location.pathname);
+  const isFromPopStateRef = useRef(false);
 
-  const getCurrentTab = useCallback(() => {
-    const path = location.pathname;
+  const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
     if (path.startsWith("/grid")) return "grid";
     if (path.startsWith("/rides")) return "rides";
@@ -39,7 +44,11 @@ export function TabNavigationProvider({ children }) {
     if (path.startsWith("/profile")) return "profile";
     if (path.startsWith("/create-ride")) return "rides";
     return null;
-  }, [location.pathname]);
+  }, []);
+
+  const getCurrentTab = useCallback(() => {
+    return getTabFromPath(location.pathname);
+  }, [location.pathname, getTabFromPath]);
 
   const isOnRootTab = useCallback(() => {
     const tab = getCurrentTab();
@@ -47,30 +56,32 @@ export function TabNavigationProvider({ children }) {
     return location.pathname === TAB_ROOT_PATHS[tab];
   }, [getCurrentTab, location.pathname]);
 
-  // Verify stack integrity and sync with history
-  const syncStackWithHistory = useCallback((tab, path) => {
-    const stacks = stacksRef.current;
-    const stack = stacks[tab];
+  // Update stacks when location changes naturally (not from goBack)
+  useEffect(() => {
+    const tab = getTabFromPath(location.pathname);
+    if (!tab) return;
 
+    // Only update if this is a genuine navigation, not a popstate
+    if (isFromPopStateRef.current) {
+      isFromPopStateRef.current = false;
+      previousPathRef.current = location.pathname;
+      return;
+    }
+
+    const stack = stacksRef.current[tab];
     if (!stack) return;
 
-    // Ensure path belongs to current tab
-    const isPathInTab = (() => {
-      if (tab === "home") return path === "/";
-      if (tab === "grid") return path.startsWith("/grid");
-      if (tab === "rides") return path === "/create-ride" || path.startsWith("/rides");
-      if (tab === "messages") return path.startsWith("/messages");
-      if (tab === "profile") return path.startsWith("/profile");
-      return false;
-    })();
-
-    if (!isPathInTab) return;
-
-    // Only push if it's a new path (prevents duplicates)
-    if (stack[stack.length - 1] !== path) {
-      stack.push(path);
+    // If returning to a previously visited path in this tab, don't re-add it
+    const lastPath = stack[stack.length - 1];
+    if (lastPath === location.pathname) {
+      previousPathRef.current = location.pathname;
+      return;
     }
-  }, []);
+
+    // New path: add to stack
+    stack.push(location.pathname);
+    previousPathRef.current = location.pathname;
+  }, [location.pathname, getTabFromPath]);
 
   const switchTab = useCallback(
     (tabName) => {
@@ -110,45 +121,24 @@ export function TabNavigationProvider({ children }) {
     const tab = getCurrentTab();
     if (!tab) return;
 
-    const stacks = stacksRef.current;
-    const stack = stacks[tab];
+    const stack = stacksRef.current[tab];
     if (!stack || stack.length <= 1) return;
 
+    // Pop from stack and navigate
     stack.pop();
-    // Use standard browser back behavior via React Router
+    isFromPopStateRef.current = true;
     navigate(-1);
-    lastNavigationTimeRef.current = Date.now();
   }, [getCurrentTab, navigate]);
 
-  // Sync stack on location change - follows React Router standard
-  useEffect(() => {
-    const tab = getCurrentTab();
-    if (!tab) return;
-
-    syncStackWithHistory(tab, location.pathname);
-  }, [location.pathname, getCurrentTab, syncStackWithHistory]);
-
-  // Handle iOS back gesture and browser back button
+  // Handle external back gestures (iOS swipe back, browser back button)
   useEffect(() => {
     const handlePopState = () => {
-      const tab = getCurrentTab();
-      if (!tab) return;
-
-      const stacks = stacksRef.current;
-      const stack = stacks[tab];
-
-      if (!stack) return;
-
-      // If stack has more than root, pop the current item
-      if (stack.length > 1) {
-        stack.pop();
-      }
+      isFromPopStateRef.current = true;
     };
 
-    // Listen to popstate which is fired by browser back/forward
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [getCurrentTab]);
+  }, []);
 
   // Save scroll position when main element scrolls
   useEffect(() => {
