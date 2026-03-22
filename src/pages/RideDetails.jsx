@@ -350,7 +350,7 @@ export default function RideDetails() {
               "bg-red-500/10 text-red-400 border-red-500/20"
             }>
               {myParticipation.status === "approved" ? "You're in!" :
-               myParticipation.status === "requested" ? "Request Pending" :
+               myParticipation.status === "requested" ? "Pending" :
                "Request Declined"}
             </Badge>
           </div>
