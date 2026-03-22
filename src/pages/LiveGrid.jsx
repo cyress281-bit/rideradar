@@ -8,6 +8,7 @@ import MeetupPin from "@/components/map/MeetupPin";
 import ActiveRiderDot from "@/components/map/ActiveRiderDot";
 import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
+import RideRoutePolyline from "@/components/map/RideRoutePolyline";
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
