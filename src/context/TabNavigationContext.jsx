@@ -17,7 +17,7 @@ export function TabNavigationProvider({ children }) {
   const location = useLocation();
   const { setDirection } = useNavigationDirection();
   
-  // Initialize and maintain stable tab stacks
+  // Initialize and maintain strict tab stacks
   const stacksRef = useRef({
     home: ["/"],
     grid: ["/grid"],
@@ -34,9 +34,10 @@ export function TabNavigationProvider({ children }) {
     profile: 0,
   });
   
-  // Track previous location to detect actual navigation changes
-  const previousPathRef = useRef(location.pathname);
+  // Strict history management: prevent browser back from breaking stacks
+  const historyStateRef = useRef(0);
   const isFromPopStateRef = useRef(false);
+  const isNavigatingRef = useRef(false);
 
   const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
@@ -58,31 +59,37 @@ export function TabNavigationProvider({ children }) {
     return location.pathname === TAB_ROOT_PATHS[tab];
   }, [getCurrentTab, location.pathname]);
 
-  // Update stacks when location changes naturally (not from goBack)
+  // Strict history stack management: ensure stacks stay synchronized with actual history
   useEffect(() => {
     const tab = getTabFromPath(location.pathname);
     if (!tab) return;
 
-    // Only update if this is a genuine navigation, not a popstate
-    if (isFromPopStateRef.current) {
-      isFromPopStateRef.current = false;
-      previousPathRef.current = location.pathname;
-      return;
-    }
-
     const stack = stacksRef.current[tab];
     if (!stack) return;
 
-    // If returning to a previously visited path in this tab, don't re-add it
-    const lastPath = stack[stack.length - 1];
-    if (lastPath === location.pathname) {
-      previousPathRef.current = location.pathname;
+    // Handle popstate (browser back button or iOS swipe)
+    if (isFromPopStateRef.current) {
+      isFromPopStateRef.current = false;
+      // Verify the current path exists in the stack
+      const lastPath = stack[stack.length - 1];
+      if (lastPath !== location.pathname) {
+        // Path mismatch: rebuild stack to match actual history
+        stack.pop();
+      }
       return;
     }
 
-    // New path: add to stack
-    stack.push(location.pathname);
-    previousPathRef.current = location.pathname;
+    // Handle programmatic navigation
+    if (isNavigatingRef.current) {
+      isNavigatingRef.current = false;
+      return;
+    }
+
+    // New navigation: ensure path is added to stack only once
+    const lastPath = stack[stack.length - 1];
+    if (lastPath !== location.pathname) {
+      stack.push(location.pathname);
+    }
   }, [location.pathname, getTabFromPath]);
 
   const switchTab = useCallback(
@@ -97,17 +104,15 @@ export function TabNavigationProvider({ children }) {
         }
       }
 
-      const stacks = stacksRef.current;
-      const stack = stacks[tabName];
+      const stack = stacksRef.current[tabName];
       if (!stack || stack.length === 0) return;
 
       const targetPath = stack[stack.length - 1];
       if (location.pathname === targetPath) return;
 
-      // Tab switch is a "push" navigation
+      // Mark as programmatic navigation to prevent stack duplication
+      isNavigatingRef.current = true;
       setDirection("push");
-      
-      // Use React Router's navigate with replace=false for standard history behavior
       navigate(targetPath, { replace: false });
 
       // Restore scroll position after navigation completes
@@ -128,9 +133,10 @@ export function TabNavigationProvider({ children }) {
     const stack = stacksRef.current[tab];
     if (!stack || stack.length <= 1) return;
 
-    // Pop from stack and navigate
+    // Pop from stack and initiate navigation
     stack.pop();
     isFromPopStateRef.current = true;
+    isNavigatingRef.current = true;
     setDirection("pop");
     navigate(-1);
   }, [getCurrentTab, navigate, setDirection]);
