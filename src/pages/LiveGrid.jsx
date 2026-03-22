@@ -237,7 +237,7 @@ export default function LiveGrid() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            <span className="text-xs font-semibold text-foreground">{rides.length} on grid</span>
+            <span className="text-xs font-semibold text-foreground">{rides.length} on radar</span>
           </div>
           {activeRides.length > 0 && (
             <div className="bg-primary/10 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-primary/30">
