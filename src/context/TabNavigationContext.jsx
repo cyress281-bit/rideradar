@@ -38,6 +38,8 @@ export function TabNavigationProvider({ children }) {
   const historyStateRef = useRef(0);
   const isFromPopStateRef = useRef(false);
   const isNavigatingRef = useRef(false);
+  const pendingPopStateRef = useRef(false);
+  const popStateTimeoutRef = useRef(null);
 
   const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
@@ -141,14 +143,30 @@ export function TabNavigationProvider({ children }) {
     navigate(-1);
   }, [getCurrentTab, navigate, setDirection]);
 
-  // Handle external back gestures (iOS swipe back, browser back button)
+  // Handle external back gestures with collision detection for rapid back-button taps
   useEffect(() => {
     const handlePopState = () => {
+      // Guard against rapid back-gesture collisions
+      if (pendingPopStateRef.current) {
+        // Collision detected: prevent stack desync by ignoring this popstate
+        return;
+      }
+
+      pendingPopStateRef.current = true;
       isFromPopStateRef.current = true;
+
+      // Clear pending state after brief delay to allow browser history to settle
+      if (popStateTimeoutRef.current) clearTimeout(popStateTimeoutRef.current);
+      popStateTimeoutRef.current = setTimeout(() => {
+        pendingPopStateRef.current = false;
+      }, 100);
     };
 
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (popStateTimeoutRef.current) clearTimeout(popStateTimeoutRef.current);
+    };
   }, []);
 
   // Save scroll position when main element scrolls
