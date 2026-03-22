@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { User, Minus } from "lucide-react";
+import { User } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { getAppSettings } from "@/lib/appSettings";
@@ -31,7 +31,9 @@ export default function HomeHeader({ username }) {
             />
           ) : (
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_14px_rgba(0,240,50,0.6)]">
-              <Minus className="w-5 h-5 text-primary-foreground" strokeWidth={3} />
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-primary-foreground fill-current">
+                <path d="M3 12c0-1.5 1.5-3 3-3s3 1.5 3 3-1.5 3-3 3-3-1.5-3-3zm14 0c0-1.5 1.5-3 3-3s3 1.5 3 3-1.5 3-3 3-3-1.5-3-3zm-7-8h2v6h-2zM7 8l-3 3 1.4 1.4L7 10.8l3.6 3.6L12 13l-5-5zm10 0l-5 5 1.4 1.4L17 10.8l3.6 3.6L22 13l-5-5z" />
+              </svg>
             </div>
           )}
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background shadow-[0_0_6px_rgba(0,240,50,0.8)]" />
