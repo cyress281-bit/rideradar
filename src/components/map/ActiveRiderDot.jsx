@@ -8,11 +8,11 @@ function createRiderIcon(username, isCurrentUser) {
   return L.divIcon({
     className: "custom-marker",
     html: `
-      <div style="position:relative">
-        <div style="background:${bg};color:${text};border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;border:2px solid ${isCurrentUser ? "#005a14" : "#333"};box-shadow:0 0 10px ${isCurrentUser ? "rgba(0,240,50,0.7)" : "rgba(255,255,255,0.3)"};white-space:nowrap">
+      <div style="position:relative" role="img" aria-label="${isCurrentUser ? "You are at" : "Rider"} @${username}">
+        <div style="background:${bg};color:${text};border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;border:2px solid ${isCurrentUser ? "#005a14" : "#333"};box-shadow:0 0 10px ${isCurrentUser ? "rgba(0,240,50,0.7)" : "rgba(255,255,255,0.3)"};white-space:nowrap" aria-hidden="true">
           ${isCurrentUser ? "● " : ""}@${username}
         </div>
-        <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${bg};margin:0 auto;width:10px"></div>
+        <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${bg};margin:0 auto;width:10px" aria-hidden="true"></div>
       </div>`,
     iconSize: [null, null],
     iconAnchor: [30, 28],

@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { rafThrottle } from "@/lib/throttle";
-import MeetupPin from "@/components/map/MeetupPin";
-import ActiveRiderDot from "@/components/map/ActiveRiderDot";
-import ActiveRidePin from "@/components/map/ActiveRidePin";
-import RideInfoPanel from "@/components/map/RideInfoPanel";
-import RideRoutePolyline from "@/components/map/RideRoutePolyline";
-import MarkerClusterGroup from "@/components/map/MarkerClusterGroup";
+
+// Lazy-load map components for code splitting (heavy with Leaflet dependencies)
+const MeetupPin = lazy(() => import("@/components/map/MeetupPin"));
+const ActiveRiderDot = lazy(() => import("@/components/map/ActiveRiderDot"));
+const ActiveRidePin = lazy(() => import("@/components/map/ActiveRidePin"));
+const RideInfoPanel = lazy(() => import("@/components/map/RideInfoPanel"));
+const RideRoutePolyline = lazy(() => import("@/components/map/RideRoutePolyline"));
+const MarkerClusterGroup = lazy(() => import("@/components/map/MarkerClusterGroup"));
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
@@ -257,48 +259,50 @@ export default function LiveGrid() {
       >
         <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
         <MapAutoCenter rides={rides} />
-        <MarkerClusterGroup markers={clusterMarkers} />
+        <Suspense fallback={null}>
+          <MarkerClusterGroup markers={clusterMarkers} />
 
-        {/* Meetup pins */}
-        {meetupRides.map((ride) => (
-          <MeetupPin
-            key={ride.id}
-            ride={ride}
-            participants={allParticipants.filter((p) => p.ride_id === ride.id)}
-            onClick={() => setSelectedRide(ride)}
-          />
-        ))}
+          {/* Meetup pins */}
+          {meetupRides.map((ride) => (
+            <MeetupPin
+              key={ride.id}
+              ride={ride}
+              participants={allParticipants.filter((p) => p.ride_id === ride.id)}
+              onClick={() => setSelectedRide(ride)}
+            />
+          ))}
 
-        {/* Active ride route polylines */}
-        {activeRides.map((ride) => (
-          <RideRoutePolyline
-            key={`route-${ride.id}`}
-            trackPoints={trackPoints.filter((tp) => tp.ride_id === ride.id)}
-            rideStatus={ride.status}
-          />
-        ))}
+          {/* Active ride route polylines */}
+          {activeRides.map((ride) => (
+            <RideRoutePolyline
+              key={`route-${ride.id}`}
+              trackPoints={trackPoints.filter((tp) => tp.ride_id === ride.id)}
+              rideStatus={ride.status}
+            />
+          ))}
 
-        {/* Active ride pins (tappable) */}
-        {activeRides.map((ride) => (
-          <ActiveRidePin
-            key={`pin-${ride.id}`}
-            ride={ride}
-            onClick={() => setSelectedRide(ride)}
-          />
-        ))}
+          {/* Active ride pins (tappable) */}
+          {activeRides.map((ride) => (
+            <ActiveRidePin
+              key={`pin-${ride.id}`}
+              ride={ride}
+              onClick={() => setSelectedRide(ride)}
+            />
+          ))}
 
-        {/* Active ride: show live rider dots */}
-        {showOtherRiders && activeRides.map((ride) =>
-          riderLocations
-            .filter((l) => l.ride_id === ride.id && l.is_active)
-            .map((loc) => (
-              <ActiveRiderDot
-                key={loc.id}
-                location={loc}
-                isCurrentUser={loc.user_email === user?.email}
-              />
-            ))
-        )}
+          {/* Active ride: show live rider dots */}
+          {showOtherRiders && activeRides.map((ride) =>
+            riderLocations
+              .filter((l) => l.ride_id === ride.id && l.is_active)
+              .map((loc) => (
+                <ActiveRiderDot
+                  key={loc.id}
+                  location={loc}
+                  isCurrentUser={loc.user_email === user?.email}
+                />
+              ))
+          )}
+        </Suspense>
       </MapContainer>
 
       {/* HUD Top Bar */}
@@ -359,17 +363,19 @@ export default function LiveGrid() {
         </div>
       )}
 
-      {/* Ride info panel */}
+      {/* Ride info panel with lazy loading */}
       <AnimatePresence>
         {selectedRide && (
-          <RideInfoPanel
-            key={selectedRide.id}
-            ride={selectedRide}
-            participants={allParticipants.filter((p) => p.ride_id === selectedRide.id)}
-            riderLocations={riderLocations}
-            user={user}
-            onClose={() => setSelectedRide(null)}
-          />
+          <Suspense fallback={null}>
+            <RideInfoPanel
+              key={selectedRide.id}
+              ride={selectedRide}
+              participants={allParticipants.filter((p) => p.ride_id === selectedRide.id)}
+              riderLocations={riderLocations}
+              user={user}
+              onClose={() => setSelectedRide(null)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>
