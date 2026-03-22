@@ -19,8 +19,8 @@ import { motion } from "framer-motion";
 
 const markerIcon = L.divIcon({
   className: "custom-marker",
-  html: `<div style="width:36px;height:36px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #7c2d12;box-shadow:0 0 16px rgba(249,115,22,0.5)">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  html: `<div style="width:36px;height:36px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #7c2d12;box-shadow:0 0 16px rgba(249,115,22,0.5)" role="img" aria-label="Meetup location">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
   </div>`,
   iconSize: [36, 36],
   iconAnchor: [18, 36],
@@ -30,6 +30,28 @@ const vibeLabels = {
   chill: "Chill", fast: "Fast", night_ride: "Night Ride",
   scenic: "Scenic", adventure: "Adventure", commute: "Commute",
 };
+
+// Memoized map component to prevent re-renders during frequent location updates
+const RideMapComponent = memo(({ ride }) => (
+  <MapContainer
+    center={[ride.meetup_lat, ride.meetup_lng]}
+    zoom={14}
+    className="h-full w-full"
+    zoomControl={false}
+    attributionControl={false}
+  >
+    <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+    <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
+  </MapContainer>
+), (prevProps, nextProps) => {
+  // Only re-render if coordinates change
+  return (
+    prevProps.ride.meetup_lat === nextProps.ride.meetup_lat &&
+    prevProps.ride.meetup_lng === nextProps.ride.meetup_lng
+  );
+});
+
+RideMapComponent.displayName = "RideMapComponent";
 
 export default function RideDetails() {
    const rideId = new URLSearchParams(window.location.search).get("id") ||
@@ -191,23 +213,14 @@ export default function RideDetails() {
   const isExpired = isPast(endTime) && ride.status !== "completed" && ride.status !== "cancelled";
 
   return (
-    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none' }}>
+    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none', overflowX: 'hidden' }}>
       {/* Header removed - TopHeader component handles it */}
 
-      {/* Map */}
+      {/* Map with strict memoization to prevent location update re-renders */}
       <div className="px-5 mb-4">
-        <div className="rounded-2xl overflow-hidden border border-border h-44">
+        <div className="rounded-2xl overflow-hidden border border-border h-44" style={{ overflowX: 'hidden' }}>
           <Suspense fallback={<div className="w-full h-full bg-secondary/40 animate-pulse" />}>
-            <MapContainer
-              center={[ride.meetup_lat, ride.meetup_lng]}
-              zoom={14}
-              className="h-full w-full"
-              zoomControl={false}
-              attributionControl={false}
-            >
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-              <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
-            </MapContainer>
+            <RideMapComponent ride={ride} />
           </Suspense>
         </div>
       </div>

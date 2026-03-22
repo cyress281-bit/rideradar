@@ -127,7 +127,7 @@ export default function Profile() {
   const canConfirmDeletion = deleteConfirmText.toLowerCase() === "permanently delete";
 
   return (
-    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none' }}>
+    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none', overflowX: 'hidden' }}>
       <div className="px-5 space-y-6">
         {/* Avatar area with upload */}
         <motion.div
