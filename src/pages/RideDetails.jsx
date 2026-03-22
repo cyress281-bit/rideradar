@@ -355,6 +355,13 @@ export default function RideDetails() {
             </Badge>
           </div>
         )}
+
+        {/* Ride Chat */}
+        <RideChat
+          rideId={rideId}
+          user={user}
+          canChat={isHost || myParticipation?.status === "approved"}
+        />
       </div>
     </div>
   );
