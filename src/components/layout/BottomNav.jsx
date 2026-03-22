@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Radar, Navigation, User, Plus } from "lucide-react";
+import { Home, Radar, Navigation, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const leftItems = [
