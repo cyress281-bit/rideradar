@@ -40,6 +40,7 @@ export default function HomeHeader({ username }) {
         <Link
           to="/profile"
           className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+          aria-label="Go to profile"
         >
           <User className="w-4 h-4 text-foreground" />
         </Link>

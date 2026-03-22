@@ -40,7 +40,8 @@ export default function BottomNav() {
             <Link
               key={item.path}
               to={item.path}
-              className="flex flex-col items-center justify-center flex-1 py-2 relative"
+              className="flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px]"
+              aria-label={item.label}
             >
               {isActive && (
                 <motion.div

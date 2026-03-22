@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import RideCard from "../components/rides/RideCard";
 import CreateRideButton from "../components/rides/CreateRideButton";
@@ -10,9 +11,6 @@ import EventRSVPCard from "../components/rides/EventRSVPCard";
 export default function Rides() {
   const [user, setUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [pullRefresh, setPullRefresh] = useState(0);
-  const touchStartY = useRef(0);
-  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -23,25 +21,7 @@ export default function Rides() {
     queryFn: () => base44.entities.Ride.list("-created_date", 100),
   });
 
-  const handlePullRefresh = (e) => {
-    if (scrollContainerRef.current?.scrollTop === 0) {
-      const deltaY = e.touches[0].clientY - touchStartY.current;
-      if (deltaY > 0) {
-        setPullRefresh(Math.min(deltaY / 100, 1));
-      }
-    }
-  };
-
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = () => {
-    if (pullRefresh > 0.5) {
-      refetchRides();
-    }
-    setPullRefresh(0);
-  };
+  const { scrollContainerRef, handlers } = usePullToRefresh(() => refetchRides());
 
   const { data: myParticipations = [] } = useQuery({
     queryKey: ["my-participations", user?.email],
@@ -73,9 +53,7 @@ export default function Rides() {
     <div
       ref={scrollContainerRef}
       className="min-h-screen pb-24"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handlePullRefresh}
-      onTouchEnd={handleTouchEnd}
+      {...handlers}
     >
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-lg font-bold">Rides</h1>
