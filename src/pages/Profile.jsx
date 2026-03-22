@@ -178,10 +178,10 @@ export default function Profile() {
           />
         </div>
 
-        {/* Bike info */}
+        {/* Primary Bike info */}
         <div>
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Bike className="w-3.5 h-3.5" /> Your Bike
+            <Bike className="w-3.5 h-3.5" /> Primary Bike
           </Label>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
@@ -203,6 +203,12 @@ export default function Profile() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Motorcycle models */}
+        <MotorcycleModels
+          models={form.motorcycle_models}
+          onUpdate={(models) => updateField("motorcycle_models", models)}
+        />
 
         {/* Ride preferences */}
         <div>
