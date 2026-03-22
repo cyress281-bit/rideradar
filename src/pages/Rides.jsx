@@ -10,12 +10,15 @@ import EventRSVPCard from "../components/rides/EventRSVPCard";
 export default function Rides() {
   const [user, setUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [pullRefresh, setPullRefresh] = useState(0);
+  const touchStartY = useRef(0);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: allRides = [] } = useQuery({
+  const { data: allRides = [], refetch: refetchRides } = useQuery({
     queryKey: ["all-rides"],
     queryFn: () => base44.entities.Ride.list("-created_date", 100),
   });
