@@ -23,7 +23,7 @@ const vibeColors = {
   commute: "bg-gray-500/15 text-gray-400 border-gray-500/20",
 };
 
-export default function RideCard({ ride, index = 0 }) {
+export default function RideCard({ ride, index = 0, compact = false }) {
   const startTime = new Date(ride.start_time);
   const isStarted = isPast(startTime);
   const timeLabel = isStarted
@@ -38,9 +38,9 @@ export default function RideCard({ ride, index = 0 }) {
     >
       <Link
         to={`/rides/${ride.id}`}
-        className="block bg-secondary/40 hover:bg-secondary/60 rounded-2xl p-4 transition-all border border-border/50"
+        className={`block bg-secondary/40 hover:bg-secondary/60 rounded-xl transition-all border border-border/50 ${compact ? "p-2.5" : "p-4 rounded-2xl"}`}
       >
-        <div className="flex items-start justify-between mb-2.5">
+        <div className={`flex items-start justify-between ${compact ? "mb-1.5" : "mb-2.5"}`}>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               {ride.status === "active" && (
@@ -56,7 +56,7 @@ export default function RideCard({ ride, index = 0 }) {
           <ChevronRight className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
         </div>
 
-        <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground">
+        <div className={`flex items-center flex-wrap gap-x-2 gap-y-1 ${compact ? "mb-1.5" : "mb-3"} text-xs text-muted-foreground`}>
           <span className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
             {timeLabel}
