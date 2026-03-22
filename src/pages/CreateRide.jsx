@@ -170,58 +170,23 @@ export default function CreateRide() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" /> Vibe
-            </Label>
-            <Select value={form.vibe} onValueChange={(v) => updateField("vibe", v)}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Select vibe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="chill">Chill</SelectItem>
-                <SelectItem value="fast">Fast</SelectItem>
-                <SelectItem value="night_ride">Night Ride</SelectItem>
-                <SelectItem value="scenic">Scenic</SelectItem>
-                <SelectItem value="adventure">Adventure</SelectItem>
-                <SelectItem value="commute">Commute</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Bike className="w-3.5 h-3.5" /> Bike Class
-            </Label>
-            <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any</SelectItem>
-                <SelectItem value="sportbike">Sportbike</SelectItem>
-                <SelectItem value="cruiser">Cruiser</SelectItem>
-                <SelectItem value="adventure">Adventure</SelectItem>
-                <SelectItem value="naked">Naked</SelectItem>
-                <SelectItem value="touring">Touring</SelectItem>
-                <SelectItem value="dual_sport">Dual Sport</SelectItem>
-                <SelectItem value="scooter">Scooter</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
         <div>
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Max Riders (optional)
+            <Sparkles className="w-3.5 h-3.5" /> Vibe
           </Label>
-          <Input
-            type="number"
-            placeholder="No limit"
-            value={form.max_riders}
-            onChange={(e) => updateField("max_riders", e.target.value)}
-            className="bg-secondary border-border"
-          />
+          <Select value={form.vibe} onValueChange={(v) => updateField("vibe", v)}>
+            <SelectTrigger className="bg-secondary border-border">
+              <SelectValue placeholder="Select vibe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chill">Chill</SelectItem>
+              <SelectItem value="fast">Fast</SelectItem>
+              <SelectItem value="night_ride">Night Ride</SelectItem>
+              <SelectItem value="scenic">Scenic</SelectItem>
+              <SelectItem value="adventure">Adventure</SelectItem>
+              <SelectItem value="commute">Commute</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
