@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useTabNavigation } from "@/context/TabNavigationContext";
 import { base44 } from "@/api/base44Client";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
@@ -30,7 +30,7 @@ function LocationPicker({ position, setPosition }) {
 }
 
 export default function CreateRide() {
-  const navigate = useNavigate();
+   const { goBack } = useTabNavigation();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -112,13 +112,14 @@ export default function CreateRide() {
     });
 
     toast({ title: "Ride created! It's now on the grid." });
-    navigate(`/rides/${ride.id}`);
+     setSubmitting(false);
+     goBack();
   };
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none' }}>
 
 
       <form onSubmit={handleSubmit} className="px-5 space-y-5">

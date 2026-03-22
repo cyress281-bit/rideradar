@@ -51,11 +51,12 @@ export default function Rides() {
   });
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="min-h-screen pb-24 relative"
-      {...handlers}
-    >
+     <div
+       ref={scrollContainerRef}
+       className="min-h-screen pb-24 relative"
+       style={{ overscrollBehavior: 'none' }}
+       {...handlers}
+     >
       {/* Pull-to-refresh indicator */}
       {progress > 0 && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
