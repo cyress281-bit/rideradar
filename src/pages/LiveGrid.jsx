@@ -44,6 +44,8 @@ export default function LiveGrid() {
   const [checkedInRides, setCheckedInRides] = useState(new Set());
   const locationRecordIds = useRef({}); // ride_id -> riderLocation record id
   const watchIdRef = useRef(null);
+  const lastTrackPointTime = useRef({}); // ride_id -> timestamp of last recorded track point
+  const TRACK_INTERVAL_MS = 15000; // record a track point every 15 seconds
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
