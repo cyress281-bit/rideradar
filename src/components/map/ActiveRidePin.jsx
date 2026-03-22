@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { Marker } from "react-leaflet";
 import L from "leaflet";
 
