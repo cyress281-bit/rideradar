@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -21,7 +22,7 @@ export default function Rides() {
     queryFn: () => base44.entities.Ride.list("-created_date", 100),
   });
 
-  const { scrollContainerRef, handlers } = usePullToRefresh(() => refetchRides());
+  const { scrollContainerRef, progress, handlers } = usePullToRefresh(() => refetchRides());
 
   const { data: myParticipations = [] } = useQuery({
     queryKey: ["my-participations", user?.email],
@@ -52,9 +53,23 @@ export default function Rides() {
   return (
     <div
       ref={scrollContainerRef}
-      className="min-h-screen pb-24"
+      className="min-h-screen pb-24 relative"
       {...handlers}
     >
+      {/* Pull-to-refresh indicator */}
+      {progress > 0 && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full"
+            style={{
+              rotate: progress * 360,
+              opacity: progress,
+            }}
+          />
+        </div>
+      )}
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-lg font-bold">Rides</h1>
         <p className="text-xs text-muted-foreground">Browse or manage your rides</p>
