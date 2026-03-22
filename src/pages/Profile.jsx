@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -82,8 +83,8 @@ export default function Profile() {
     }
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
+  const saveMutation = useMutationWithOptimism(
+    async () => {
       await base44.auth.updateMe({
         username: form.username,
         profile_pic_url: form.profile_pic_url || undefined,
@@ -96,10 +97,8 @@ export default function Profile() {
         invisible_mode: form.invisible_mode,
       });
     },
-    onSuccess: () => {
-      toast({ title: "Profile saved!" });
-    },
-  });
+    { successMessage: "Profile saved!" }
+  );
 
   const toggleVibe = (vibe) => {
     setForm((f) => ({

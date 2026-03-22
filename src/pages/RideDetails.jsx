@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
@@ -63,8 +64,8 @@ export default function RideDetails() {
   const approvedRiders = participants.filter((p) => p.status === "approved");
   const pendingRequests = participants.filter((p) => p.status === "requested");
 
-  const joinMutation = useMutation({
-    mutationFn: async () => {
+  const joinMutation = useMutationWithOptimism(
+    async () => {
       const username = user?.username || user?.email?.split("@")[0] || "rider";
       await base44.entities.RideParticipant.create({
         ride_id: rideId,
@@ -74,72 +75,70 @@ export default function RideDetails() {
         role: "rider",
       });
     },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
-      const previousData = queryClient.getQueryData(["participants", rideId]);
-      const optimisticParticipant = {
-        id: `optimistic-${Date.now()}`,
-        ride_id: rideId,
-        user_email: user.email,
-        username: user?.username || user?.email?.split("@")[0] || "rider",
-        status: "approved",
-        role: "rider",
-      };
-      queryClient.setQueryData(["participants", rideId], (old) => [...(old || []), optimisticParticipant]);
-      setJoined(true);
-      return previousData;
-    },
-    onError: (err, newData, previousData) => {
-      if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-      setJoined(false);
-      toast({ title: "Failed to join ride", variant: "destructive" });
-    },
-    onSuccess: () => {
-      toast({ title: "You joined the ride!" });
-    },
-  });
+    {
+      onMutate: async () => {
+        await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
+        const previousData = queryClient.getQueryData(["participants", rideId]);
+        const optimisticParticipant = {
+          id: `optimistic-${Date.now()}`,
+          ride_id: rideId,
+          user_email: user.email,
+          username: user?.username || user?.email?.split("@")[0] || "rider",
+          status: "approved",
+          role: "rider",
+        };
+        queryClient.setQueryData(["participants", rideId], (old) => [...(old || []), optimisticParticipant]);
+        setJoined(true);
+        return previousData;
+      },
+      onError: (err, newData, previousData) => {
+        if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+        setJoined(false);
+      },
+      errorMessage: "Failed to join ride",
+      successMessage: "You joined the ride!",
+    }
+  );
 
-  const approveMutation = useMutation({
-    mutationFn: async (participantId) => {
+  const approveMutation = useMutationWithOptimism(
+    async (participantId) => {
       await base44.entities.RideParticipant.update(participantId, { status: "approved" });
       await base44.entities.Ride.update(rideId, { rider_count: (ride.rider_count || 1) + 1 });
     },
-    onMutate: async (participantId) => {
-      await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
-      const previousData = queryClient.getQueryData(["participants", rideId]);
-      queryClient.setQueryData(["participants", rideId], (old) =>
-        old.map((p) => (p.id === participantId ? { ...p, status: "approved" } : p))
-      );
-      return previousData;
-    },
-    onError: (err, participantId, previousData) => {
-      if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-      toast({ title: "Failed to approve rider", variant: "destructive" });
-    },
-    onSuccess: () => {
-      toast({ title: "Rider approved!" });
-    },
-  });
+    {
+      onMutate: async (participantId) => {
+        await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
+        const previousData = queryClient.getQueryData(["participants", rideId]);
+        queryClient.setQueryData(["participants", rideId], (old) =>
+          old.map((p) => (p.id === participantId ? { ...p, status: "approved" } : p))
+        );
+        return previousData;
+      },
+      onError: (err, participantId, previousData) => {
+        if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+      },
+      successMessage: "Rider approved!",
+    }
+  );
 
-  const declineMutation = useMutation({
-    mutationFn: (participantId) =>
+  const declineMutation = useMutationWithOptimism(
+    (participantId) =>
       base44.entities.RideParticipant.update(participantId, { status: "declined" }),
-    onMutate: async (participantId) => {
-      await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
-      const previousData = queryClient.getQueryData(["participants", rideId]);
-      queryClient.setQueryData(["participants", rideId], (old) =>
-        old.map((p) => (p.id === participantId ? { ...p, status: "declined" } : p))
-      );
-      return previousData;
-    },
-    onError: (err, participantId, previousData) => {
-      if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-      toast({ title: "Failed to decline rider", variant: "destructive" });
-    },
-    onSuccess: () => {
-      toast({ title: "Rider declined!" });
-    },
-  });
+    {
+      onMutate: async (participantId) => {
+        await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
+        const previousData = queryClient.getQueryData(["participants", rideId]);
+        queryClient.setQueryData(["participants", rideId], (old) =>
+          old.map((p) => (p.id === participantId ? { ...p, status: "declined" } : p))
+        );
+        return previousData;
+      },
+      onError: (err, participantId, previousData) => {
+        if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
+      },
+      successMessage: "Rider declined!",
+    }
+  );
 
   const updateStatus = async (newStatus) => {
     await base44.entities.Ride.update(rideId, { status: newStatus });
