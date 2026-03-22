@@ -110,6 +110,14 @@ export default function LiveGrid() {
     return unsub;
   }, [queryClient]);
 
+  // Real-time subscription to track points
+  useEffect(() => {
+    const unsub = base44.entities.RideTrackPoint.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["track-points"] });
+    });
+    return unsub;
+  }, [queryClient]);
+
   // Real-time subscription to Ride changes
   useEffect(() => {
     const unsub = base44.entities.Ride.subscribe(() => {
