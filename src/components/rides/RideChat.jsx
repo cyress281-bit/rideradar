@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { Send, AlertTriangle, Navigation, MapPin, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +26,10 @@ function TagBadge({ tag }) {
 }
 
 export default function RideChat({ rideId, user, canChat }) {
-  const queryClient = useQueryClient();
-  const [text, setText] = useState("");
-  const [tag, setTag] = useState("chat");
-  const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
+   const queryClient = useQueryClient();
+   const [text, setText] = useState("");
+   const [tag, setTag] = useState("chat");
+   const bottomRef = useRef(null);
 
   const { data: messages = [] } = useQuery({
     queryKey: ["ride-chat", rideId],
@@ -53,20 +53,45 @@ export default function RideChat({ rideId, user, canChat }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  const messageMutation = useMutationWithOptimism(
+    async (messageData) => {
+      const username = user.username || user.email?.split("@")[0] || "rider";
+      await base44.entities.RideMessage.create({
+        ride_id: rideId,
+        user_email: user.email,
+        username,
+        text: messageData.text,
+        tag: messageData.tag,
+      });
+    },
+    {
+      onMutate: async (messageData) => {
+        await queryClient.cancelQueries({ queryKey: ["ride-chat", rideId] });
+        const previousData = queryClient.getQueryData(["ride-chat", rideId]);
+        const optimisticMessage = {
+          id: `optimistic-${Date.now()}`,
+          ride_id: rideId,
+          user_email: user.email,
+          username: user.username || user.email?.split("@")[0] || "rider",
+          text: messageData.text,
+          tag: messageData.tag,
+          created_date: new Date().toISOString(),
+        };
+        queryClient.setQueryData(["ride-chat", rideId], (old) => [...(old || []), optimisticMessage]);
+        return previousData;
+      },
+      onError: (err, _, previousData) => {
+        if (previousData) queryClient.setQueryData(["ride-chat", rideId], previousData);
+      },
+    }
+  );
+
   const sendMessage = async () => {
-    if (!text.trim() || !user || sending) return;
-    setSending(true);
-    const username = user.username || user.email?.split("@")[0] || "rider";
-    await base44.entities.RideMessage.create({
-      ride_id: rideId,
-      user_email: user.email,
-      username,
-      text: text.trim(),
-      tag,
-    });
+    if (!text.trim() || !user) return;
+    const messageText = text.trim();
+    const messageTag = tag;
     setText("");
-    setSending(false);
-    queryClient.invalidateQueries({ queryKey: ["ride-chat", rideId] });
+    messageMutation.mutate({ text: messageText, tag: messageTag });
   };
 
   const handleKeyDown = (e) => {
@@ -162,13 +187,13 @@ export default function RideChat({ rideId, user, canChat }) {
               maxLength={280}
             />
             <Button
-              onClick={sendMessage}
-              disabled={!text.trim() || sending}
-              size="icon"
-              className="h-9 w-9 bg-primary hover:bg-primary/90 flex-shrink-0"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </Button>
+               onClick={sendMessage}
+               disabled={!text.trim() || messageMutation.isPending}
+               size="icon"
+               className="h-9 w-9 bg-primary hover:bg-primary/90 flex-shrink-0"
+             >
+               <Send className="w-3.5 h-3.5" />
+             </Button>
           </div>
         </div>
       ) : (
