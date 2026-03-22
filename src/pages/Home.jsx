@@ -62,7 +62,7 @@ export default function Home() {
             ) : (
               <div className="space-y-2">
                 {activeRides.map((ride, i) => (
-                  <RidePreviewCard key={ride.id} ride={ride} index={i} />
+                  <RidePreviewCard key={ride.id} ride={ride} index={i} user={user} />
                 ))}
               </div>
             )}
