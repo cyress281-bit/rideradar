@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { X, Clock, Users, Bike, MapPin, CheckCircle, UserPlus, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -76,13 +78,13 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
 
       <div className="p-4">
-         <button
-           onClick={onClose}
-           className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-           aria-label="Close ride information panel"
-         >
-           <X className="w-3.5 h-3.5" aria-hidden="true" />
-         </button>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+          aria-label="Close ride information panel"
+        >
+          <X className="w-3.5 h-3.5" aria-hidden="true" />
+        </button>
 
         {/* Status + Title */}
         <div className="flex items-center gap-2 mb-0.5 pr-8">
@@ -92,7 +94,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
             </span>
           ) : (
-            <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
           )}
           <h3 className="font-bold text-base leading-tight">{ride.title}</h3>
         </div>
@@ -127,12 +129,12 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
           )}
           {ride.bike_class && ride.bike_class !== "any" && (
             <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-secondary/60 text-muted-foreground border-border">
-              <Bike className="w-3 h-3 mr-1" />{ride.bike_class}
+              <Bike className="w-3 h-3 mr-1" aria-hidden="true" />{ride.bike_class}
             </Badge>
           )}
           {ride.duration_minutes && (
             <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-secondary/60 text-muted-foreground border-border">
-              <Clock className="w-3 h-3 mr-1" />{ride.duration_minutes}m
+              <Clock className="w-3 h-3 mr-1" aria-hidden="true" />{ride.duration_minutes}m
             </Badge>
           )}
         </div>
@@ -155,11 +157,11 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
               }`}
             >
               {joined ? (
-                <><Check className="w-4 h-4" /> You're In!</>
+                <><Check className="w-4 h-4" aria-hidden="true" /> You're In!</>
               ) : joinMutation.isPending ? (
                 "Joining..."
               ) : (
-                <><UserPlus className="w-4 h-4" /> Quick Join</>
+                <><UserPlus className="w-4 h-4" aria-hidden="true" /> Quick Join</>
               )}
             </button>
           )}
@@ -171,7 +173,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
               isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
             }`}
           >
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
             {isHost ? "Manage Ride" : "Details"}
           </Link>
         </div>
