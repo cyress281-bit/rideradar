@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SelectDrawer from "@/components/SelectDrawer";
-import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock, Calendar, CreditCard } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
@@ -47,7 +47,6 @@ export default function CreateRide() {
     requirements: "",
     meetup_address: "",
     location_name: "",
-    registration_fee: "",
   });
 
   useEffect(() => {
@@ -87,7 +86,6 @@ export default function CreateRide() {
       duration_minutes: parseInt(form.duration_minutes),
       vibe: form.vibe || undefined,
       requirements: form.requirements || undefined,
-      registration_fee: rideType === "planned_event" && form.registration_fee ? parseFloat(form.registration_fee) : undefined,
       status: "meetup",
       rider_count: 1,
     });
@@ -98,7 +96,6 @@ export default function CreateRide() {
         ride_id: ride.id,
         ride_title: form.title,
         host_username: username,
-        host_email: user?.email,
         meetup_lat: position[0],
         meetup_lng: position[1],
         message: `Ride starting nearby — Join?`,
@@ -256,24 +253,6 @@ export default function CreateRide() {
             onChange={(e) => updateField("location_name", e.target.value)}
             className="bg-secondary border-border"
           />
-        )}
-
-        {/* Registration fee for planned events */}
-        {rideType === "planned_event" && (
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <CreditCard className="w-3.5 h-3.5" /> Registration Fee (USD, optional)
-            </Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="e.g. 15.00 — leave blank for free"
-              value={form.registration_fee}
-              onChange={(e) => updateField("registration_fee", e.target.value)}
-              className="bg-secondary border-border"
-            />
-          </div>
         )}
 
         {rideMode === "now" && (

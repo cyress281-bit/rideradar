@@ -1,39 +1,16 @@
-import React, { useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Calendar, Check, X, CreditCard } from "lucide-react";
-import { createEventCheckout } from "@/functions/createEventCheckout";
+import { MapPin, Users, Calendar, Check, X } from "lucide-react";
 import { format } from "date-fns";
 
 export default function EventRSVPCard({ event, user, myStatus, onStatusChange }) {
   const queryClient = useQueryClient();
   const [optimisticStatus, setOptimisticStatus] = React.useState(myStatus);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-
-  const hasFee = event.registration_fee && event.registration_fee > 0;
-
-  const handlePaidRSVP = async () => {
-    if (window.self !== window.top) {
-      alert("Payment checkout only works from the published app, not inside the editor preview.");
-      return;
-    }
-    setCheckoutLoading(true);
-    const res = await createEventCheckout({
-      eventId: event.id,
-      eventTitle: event.title,
-      registrationFee: event.registration_fee,
-      successUrl: window.location.href,
-      cancelUrl: window.location.href,
-    });
-    setCheckoutLoading(false);
-    if (res.data?.url) {
-      window.location.href = res.data.url;
-    }
-  };
 
   const formatIcon = {
     stationary: "📍",
@@ -129,37 +106,17 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
         )}
       </div>
 
-      {/* Fee badge */}
-      {hasFee && (
-        <div className="flex items-center gap-1.5 text-[10px] text-amber-400">
-          <CreditCard className="w-3 h-3" aria-hidden="true" />
-          Registration fee: <span className="font-bold">${event.registration_fee.toFixed(2)}</span>
-        </div>
-      )}
-
       {/* RSVP Actions */}
       {!optimisticStatus ? (
         <div className="flex gap-2 pt-2">
-          {hasFee ? (
-            <Button
-              onClick={handlePaidRSVP}
-              disabled={checkoutLoading}
-              className="flex-1 h-8 bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 text-xs font-semibold border border-amber-500/30"
-              variant="outline"
-            >
-              <CreditCard className="w-3 h-3 mr-1" aria-hidden="true" />
-              {checkoutLoading ? "Redirecting..." : `Pay & Register`}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleRSVP("approved")}
-              disabled={rsvpMutation.isPending}
-              className="flex-1 h-8 bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-semibold border border-green-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              variant="outline"
-            >
-              <Check className="w-3 h-3 mr-1" aria-hidden="true" /> Going
-            </Button>
-          )}
+          <Button
+            onClick={() => handleRSVP("approved")}
+            disabled={rsvpMutation.isPending}
+            className="flex-1 h-8 bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-semibold border border-green-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            variant="outline"
+          >
+            <Check className="w-3 h-3 mr-1" aria-hidden="true" /> Going
+          </Button>
           <Button
             onClick={() => handleRSVP("declined")}
             disabled={rsvpMutation.isPending}
