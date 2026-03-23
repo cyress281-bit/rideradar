@@ -84,9 +84,9 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       </div>
 
       {activeTab === "chat" ? (
-        <div className="p-3">
-          <RideChat rideId={ride.id} user={user} canChat={joined || isHost} />
-        </div>
+       <div className="p-3">
+         <RideChat rideId={ride.id} user={user} canChat={joined || isHost} isHost={isHost} rideStatus={ride.status} />
+       </div>
       ) : (
       <div className="p-4">
         <button
