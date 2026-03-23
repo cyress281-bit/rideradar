@@ -27,7 +27,7 @@ export default function HomeHeader({ username, user }) {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* <NotificationCenter user={user} /> */}
+        <NotificationCenter user={user} />
       </div>
     </div>
   );
