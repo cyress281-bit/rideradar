@@ -174,18 +174,6 @@ export default function Profile() {
             <p className="text-[10px] text-muted-foreground">Likes</p>
           </div>
         </div>
-          <div className="text-center">
-            <p className="text-base font-bold flex items-center gap-0.5">
-              <Star className="w-3.5 h-3.5 text-amber-400 inline" fill="currentColor" />
-              {user?.reputation_score || "5.0"}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Rep</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-bold">{form.motorcycle_models?.length || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Bikes</p>
-          </div>
-        </div>
 
         {/* Vibe tags */}
         {form.ride_preferences.length > 0 && (
