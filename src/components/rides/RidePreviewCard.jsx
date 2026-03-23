@@ -46,7 +46,6 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
   useEffect(() => {
     if (!user) return;
     setIsHost(ride.host_email === user.email);
-    // Check if already joined
     base44.entities.RideParticipant.filter({ ride_id: ride.id, user_email: user.email })
       .then((participants) => {
         if (participants.length > 0) setJoined(true);
@@ -59,6 +58,13 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
     e.stopPropagation();
     if (!user || joining || joined || isHost) return;
     setJoining(true);
+    // Guard against duplicate records
+    const existing = await base44.entities.RideParticipant.filter({ ride_id: ride.id, user_email: user.email });
+    if (existing.length > 0) {
+      setJoined(true);
+      setJoining(false);
+      return;
+    }
     const username = user.username || user.email?.split("@")[0] || "rider";
     await base44.entities.RideParticipant.create({
       ride_id: ride.id,
