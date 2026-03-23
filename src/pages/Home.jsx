@@ -37,8 +37,7 @@ export default function Home() {
         meetups={meetupRides.length}
       />
 
-      <div className="px-5 py-3">
-        <div className="grid grid-cols-2 gap-3">
+      <div className="px-5 py-3 space-y-6">
           {/* Riding Now */}
           <div>
             <div className="flex items-center gap-1.5 mb-2">
@@ -68,8 +67,11 @@ export default function Home() {
             )}
           </div>
 
-          {/* Happening Soon */}
-          <div>
+      </div>
+
+      <div className="px-5 py-3">
+        {/* Happening Soon */}
+        <div>
             <div className="flex items-center gap-1.5 mb-2">
               <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
               <h2 className="text-xs font-semibold tracking-tight">Happening Soon</h2>
