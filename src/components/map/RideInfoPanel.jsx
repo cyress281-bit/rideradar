@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+
 import { motion } from "framer-motion";
 import { X, Clock, Users, Bike, MapPin, CheckCircle, UserPlus, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -129,15 +129,14 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
 
         {/* Action buttons */}
         <div className="flex gap-2">
-          {/* Quick join */}
           {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
             <button
               onClick={handleJoin}
               disabled={joining || joined}
-              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all ${
+              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all flex-1 justify-center ${
                 joined
-                  ? "bg-green-500/15 text-green-400 border-green-500/20 flex-1"
-                  : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 flex-1"
+                  ? "bg-green-500/15 text-green-400 border-green-500/20"
+                  : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25"
               }`}
             >
               {joined ? (
@@ -149,17 +148,11 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
               )}
             </button>
           )}
-
-          {/* View details */}
-          <Link
-            to={`/rides/${ride.id}`}
-            className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors ${
-              isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
-            }`}
-          >
-            <ArrowRight className="w-4 h-4" />
-            {isHost ? "Manage Ride" : "Details"}
-          </Link>
+          {isHost && (
+            <div className="flex-1 text-center py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-sm font-bold text-primary">
+              👑 You're the Host
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
