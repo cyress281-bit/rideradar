@@ -14,7 +14,7 @@ export default function Messages() {
   const [selectedRide, setSelectedRide] = useState(null);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [showFriendsTab, setShowFriendsTab] = useState(false);
-  const [searchEmail, setSearchEmail] = useState("");
+  const [searchUsername, setSearchUsername] = useState("");
   const [addingFriend, setAddingFriend] = useState(false);
 
   useEffect(() => {
@@ -54,20 +54,27 @@ export default function Messages() {
   });
 
   const handleAddFriend = async () => {
-    if (!searchEmail.trim()) return;
+    if (!searchUsername.trim()) return;
     setAddingFriend(true);
+    // Search for user by username
+    const users = await base44.entities.User.list();
+    const foundUser = users.find((u) => u.username?.toLowerCase() === searchUsername.trim().toLowerCase());
+    if (!foundUser) {
+      setAddingFriend(false);
+      return;
+    }
     // Check if already friends
-    const existing = friendships.find((f) => (f.user_email === searchEmail || f.friend_email === searchEmail) && f.status === "accepted");
+    const existing = friendships.find((f) => (f.user_email === foundUser.email || f.friend_email === foundUser.email) && f.status === "accepted");
     if (existing) {
       setAddingFriend(false);
       return;
     }
     await base44.entities.UserFriend.create({
       user_email: user.email,
-      friend_email: searchEmail,
+      friend_email: foundUser.email,
       status: "accepted",
     });
-    setSearchEmail("");
+    setSearchUsername("");
     setAddingFriend(false);
     queryClient.invalidateQueries({ queryKey: ["friends", user.email] });
   };
@@ -188,23 +195,23 @@ export default function Messages() {
           >
             {/* Add friend form */}
             <div className="px-5 py-4 border-b border-border space-y-2">
-              <label className="text-xs text-muted-foreground font-semibold">Add by email</label>
-              <div className="flex gap-2">
-                <Input
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
-                  placeholder="friend@example.com"
-                  className="bg-secondary border-border flex-1 text-sm h-9"
-                />
-                <button
-                  onClick={handleAddFriend}
-                  disabled={addingFriend || !searchEmail.trim()}
-                  className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg text-xs transition-colors disabled:opacity-50"
-                >
-                  {addingFriend ? "..." : <Plus className="w-4 h-4" />}
-                </button>
-              </div>
+             <label className="text-xs text-muted-foreground font-semibold">Add by username</label>
+             <div className="flex gap-2">
+               <Input
+                 value={searchUsername}
+                 onChange={(e) => setSearchUsername(e.target.value)}
+                 onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
+                 placeholder="username"
+                 className="bg-secondary border-border flex-1 text-sm h-9"
+               />
+               <button
+                 onClick={handleAddFriend}
+                 disabled={addingFriend || !searchUsername.trim()}
+                 className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg text-xs transition-colors disabled:opacity-50"
+               >
+                 {addingFriend ? "..." : <Plus className="w-4 h-4" />}
+               </button>
+             </div>
             </div>
 
             {friends.length === 0 ? (
