@@ -10,7 +10,7 @@ import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
 import LiveGrid from './pages/LiveGrid';
 import Rides from './pages/Rides';
-import RideDetails from './pages/RideDetails';
+
 import CreateRide from './pages/CreateRide';
 import Profile from './pages/Profile';
 
@@ -43,7 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Home />} />
         <Route path="/grid" element={<LiveGrid />} />
         <Route path="/rides" element={<Rides />} />
-        <Route path="/rides/:rideId" element={<RideDetails />} />
+
         <Route path="/create-ride" element={<CreateRide />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
