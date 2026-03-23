@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SelectDrawer from "@/components/SelectDrawer";
-import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock, Calendar, CreditCard } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
