@@ -13,7 +13,7 @@ export default function HomeHeader({ username }) {
           className="relative"
         >
           <img
-            src="https://media.base44.com/images/public/69c00371996a3698d9301734/27c378d8b_generated_image.png"
+            src="https://media.base44.com/images/public/69c00371996a3698d9301734/b98c6b34e_generated_image.png"
             alt="RideRadar logo"
             className="w-9 h-9 rounded-xl object-cover shadow-[0_0_14px_rgba(0,240,50,0.6)]"
           />
