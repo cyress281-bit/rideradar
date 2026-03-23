@@ -33,7 +33,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <HomeHeader username={user?.username} />
+      <HomeHeader username={user?.username} user={user} />
       <StatsBar
         totalRiders={totalRiders}
         activeRides={activeRides.length}
