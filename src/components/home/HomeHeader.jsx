@@ -21,7 +21,7 @@ export default function HomeHeader({ username }) {
         </motion.div>
         <div>
           <h1 className="text-lg font-bold tracking-tight">RideRadar</h1>
-          <p className="text-[11px] text-muted-foreground -mt-0.5">Group rides near you</p>
+          <p className="text-[11px] text-muted-foreground -mt-0.5">Never ride alone</p>
         </div>
       </div>
 
