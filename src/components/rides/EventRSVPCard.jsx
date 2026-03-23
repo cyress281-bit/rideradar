@@ -5,7 +5,8 @@ import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Calendar, Check, X } from "lucide-react";
+import { MapPin, Users, Calendar, Check, X, CreditCard } from "lucide-react";
+import { createEventCheckout } from "@/functions/createEventCheckout";
 import { format } from "date-fns";
 
 export default function EventRSVPCard({ event, user, myStatus, onStatusChange }) {
