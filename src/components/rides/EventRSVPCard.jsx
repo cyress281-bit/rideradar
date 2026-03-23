@@ -12,6 +12,28 @@ import { format } from "date-fns";
 export default function EventRSVPCard({ event, user, myStatus, onStatusChange }) {
   const queryClient = useQueryClient();
   const [optimisticStatus, setOptimisticStatus] = React.useState(myStatus);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  const hasFee = event.registration_fee && event.registration_fee > 0;
+
+  const handlePaidRSVP = async () => {
+    if (window.self !== window.top) {
+      alert("Payment checkout only works from the published app, not inside the editor preview.");
+      return;
+    }
+    setCheckoutLoading(true);
+    const res = await createEventCheckout({
+      eventId: event.id,
+      eventTitle: event.title,
+      registrationFee: event.registration_fee,
+      successUrl: window.location.href,
+      cancelUrl: window.location.href,
+    });
+    setCheckoutLoading(false);
+    if (res.data?.url) {
+      window.location.href = res.data.url;
+    }
+  };
 
   const formatIcon = {
     stationary: "📍",
