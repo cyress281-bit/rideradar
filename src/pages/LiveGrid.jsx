@@ -9,6 +9,7 @@ import ActiveRiderDot from "@/components/map/ActiveRiderDot";
 import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
 import RideRoutePolyline from "@/components/map/RideRoutePolyline";
+import HostLocationPin from "@/components/map/HostLocationPin";
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
@@ -256,10 +257,19 @@ export default function LiveGrid() {
           />
         ))}
 
+        {/* Host live location pins — visible for ALL rides (helps late-comers) */}
+        {rides.map((ride) => (
+          <HostLocationPin
+            key={`host-${ride.id}`}
+            ride={ride}
+            riderLocations={riderLocations}
+          />
+        ))}
+
         {/* Active ride: show live rider dots */}
         {showOtherRiders && activeRides.map((ride) =>
           riderLocations
-            .filter((l) => l.ride_id === ride.id && l.is_active)
+            .filter((l) => l.ride_id === ride.id && l.is_active && l.user_email !== ride.host_email)
             .map((loc) => (
               <ActiveRiderDot
                 key={loc.id}
