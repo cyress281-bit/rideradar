@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, X, Check, MessageSquare, Users, Zap, Clock } from "lucide-react";
+import { Bell, X, Check, MessageSquare, Users, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 
 export default function NotificationCenter({ user }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
   const ref = useRef(null);
 
   // Friend requests (incoming)
@@ -18,7 +17,7 @@ export default function NotificationCenter({ user }) {
     enabled: !!user?.email,
   });
 
-  // Unread DMs (latest message from each friend)
+  // Unread DMs
   const { data: friendships = [] } = useQuery({
     queryKey: ["friends", user?.email],
     queryFn: async () => {
@@ -29,7 +28,7 @@ export default function NotificationCenter({ user }) {
     enabled: !!user?.email,
   });
 
-  const friends = friendships.map((f) => (f.user_email === user.email ? f.friend_email : f.user_email));
+  const friends = useMemo(() => friendships.map((f) => (f.user_email === user?.email ? f.friend_email : f.user_email)), [friendships, user?.email]);
 
   const { data: latestDMs = [] } = useQuery({
     queryKey: ["unread-dms", friends.join(",")],
@@ -47,13 +46,57 @@ export default function NotificationCenter({ user }) {
     refetchInterval: 5000,
   });
 
-  // Ride notifications and updates
+  // Ride notifications
   const { data: rideNotifications = [] } = useQuery({
     queryKey: ["ride-notifications", user?.email],
     queryFn: () => base44.entities.RideNotification.filter({ recipient_email: user.email, read: false }, "-created_date", 20),
     enabled: !!user?.email,
     refetchInterval: 10000,
   });
+
+  // Build notification list with useMemo
+  const notifications = useMemo(() => {
+    const notifs = [];
+
+    friendRequests.forEach((fr) => {
+      notifs.push({
+        id: `fr-${fr.id}`,
+        type: "friend-request",
+        icon: Users,
+        title: "Friend Request",
+        message: `${fr.user_email} sent you a friend request`,
+        data: fr,
+        timestamp: fr.created_date,
+      });
+    });
+
+    latestDMs.forEach((dm) => {
+      const sender = dm.sender_email === user?.email ? dm.recipient_email : dm.sender_email;
+      notifs.push({
+        id: `dm-${dm.id}`,
+        type: "message",
+        icon: MessageSquare,
+        title: "New Message",
+        message: `${sender}: ${dm.text.substring(0, 50)}${dm.text.length > 50 ? "..." : ""}`,
+        data: dm,
+        timestamp: dm.created_date,
+      });
+    });
+
+    rideNotifications.forEach((rn) => {
+      notifs.push({
+        id: `rn-${rn.id}`,
+        type: "ride",
+        icon: Zap,
+        title: "Ride Update",
+        message: rn.message,
+        data: rn,
+        timestamp: rn.created_date,
+      });
+    });
+
+    return notifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [friendRequests, latestDMs, rideNotifications, user?.email]);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -72,54 +115,7 @@ export default function NotificationCenter({ user }) {
       unsub2();
       unsub3();
     };
-  }, [user?.email]);
-
-  // Build notification list
-  useEffect(() => {
-    const notifs = [];
-
-    // Friend requests
-    friendRequests.forEach((fr) => {
-      notifs.push({
-        id: `fr-${fr.id}`,
-        type: "friend-request",
-        icon: Users,
-        title: "Friend Request",
-        message: `${fr.user_email} sent you a friend request`,
-        data: fr,
-        timestamp: fr.created_date,
-      });
-    });
-
-    // Unread DMs
-    latestDMs.forEach((dm) => {
-      const sender = dm.sender_email === user?.email ? dm.recipient_email : dm.sender_email;
-      notifs.push({
-        id: `dm-${dm.id}`,
-        type: "message",
-        icon: MessageSquare,
-        title: "New Message",
-        message: `${sender}: ${dm.text.substring(0, 50)}${dm.text.length > 50 ? "..." : ""}`,
-        data: dm,
-        timestamp: dm.created_date,
-      });
-    });
-
-    // Ride notifications
-    rideNotifications.forEach((rn) => {
-      notifs.push({
-        id: `rn-${rn.id}`,
-        type: "ride",
-        icon: Zap,
-        title: "Ride Update",
-        message: rn.message,
-        data: rn,
-        timestamp: rn.created_date,
-      });
-    });
-
-    setNotifications(notifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
-  }, [friendRequests, latestDMs, rideNotifications]);
+  }, [user?.email, queryClient]);
 
   const handleAcceptFriend = async (fr) => {
     await base44.entities.UserFriend.update(fr.id, { status: "accepted" });
@@ -144,7 +140,6 @@ export default function NotificationCenter({ user }) {
 
   const unreadCount = notifications.length;
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -178,7 +173,6 @@ export default function NotificationCenter({ user }) {
             transition={{ duration: 0.15 }}
             className="absolute right-2 top-11 w-80 max-h-[600px] bg-card border border-border rounded-2xl shadow-2xl z-[2000] overflow-hidden flex flex-col"
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
               <h3 className="text-sm font-bold">Notifications</h3>
               {unreadCount > 0 && (
@@ -193,7 +187,6 @@ export default function NotificationCenter({ user }) {
               )}
             </div>
 
-            {/* Notifications list */}
             <div className="overflow-y-auto flex-1">
               {notifications.length === 0 ? (
                 <div className="py-10 text-center">
@@ -226,7 +219,6 @@ export default function NotificationCenter({ user }) {
                           </p>
                         </div>
 
-                        {/* Actions */}
                         {isFriendRequest && (
                           <div className="flex gap-1 flex-shrink-0 mt-0.5">
                             <button
