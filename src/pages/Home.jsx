@@ -4,24 +4,35 @@ import { useQuery } from "@tanstack/react-query";
 import HomeHeader from "../components/home/HomeHeader";
 import StatsBar from "../components/home/StatsBar";
 import MiniMap from "../components/home/MiniMap";
-import RideSection from "../components/home/RideSection";
 import RidePreviewCard from "../components/rides/RidePreviewCard";
 import CreateRideButton from "../components/rides/CreateRideButton";
 
 export default function Home() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    const fetchUser = async () => {
+      try {
+        const u = await base44.auth.me();
+        setUser(u);
+      } catch (e) {
+        console.log("User fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
   }, []);
 
-  const { data: rides = [] } = useQuery({
+  const { data: rides = [], isLoading: ridesLoading } = useQuery({
     queryKey: ["rides-home"],
     queryFn: () => base44.entities.Ride.filter(
       { status: { $in: ["meetup", "active"] } },
       "-created_date",
       50
     ),
+    enabled: !loading,
   });
 
   const activeRides = rides.filter((r) => r.status === "active");
@@ -30,6 +41,17 @@ export default function Home() {
 
   // Estimate total riders on grid from ride data
   const totalRiders = rides.reduce((acc, r) => acc + (r.rider_count || 1), 0);
+
+  if (loading || ridesLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-xs text-muted-foreground">Loading RideRadar...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
