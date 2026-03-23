@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Users, Plus, X, Check, Calendar } from "lucide-react";
+import { MessageSquare, Users, Plus, X, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import RideChat from "@/components/rides/RideChat";
 import DirectMessageChat from "@/components/messages/DirectMessageChat";
-import FriendsRidesTab from "@/components/messages/FriendsRidesTab";
 import { Input } from "@/components/ui/input";
 
 export default function Messages() {
@@ -146,26 +145,18 @@ export default function Messages() {
           <button
             onClick={() => setShowFriendsTab(false)}
             className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-              !showFriendsTab || showFriendsTab === "rides" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
+              !showFriendsTab ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
             }`}
           >
             Rides
           </button>
           <button
-            onClick={() => setShowFriendsTab("friends")}
+            onClick={() => setShowFriendsTab(true)}
             className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-              showFriendsTab === "friends" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
+              showFriendsTab ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
             }`}
           >
             Friends {friends.length > 0 && `(${friends.length})`}
-          </button>
-          <button
-            onClick={() => setShowFriendsTab("group-rides")}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-              showFriendsTab === "group-rides" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
-            }`}
-          >
-            <Calendar className="w-3 h-3 inline mr-1" />Group Rides
           </button>
         </div>
       </div>
@@ -195,17 +186,7 @@ export default function Messages() {
               <DirectMessageChat friend={selectedFriend} user={user} />
             </div>
           </motion.div>
-        ) : showFriendsTab === "group-rides" ? (
-          <motion.div
-            key="group-rides"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="px-5 py-4"
-          >
-            <FriendsRidesTab friendships={friendships} user={user} />
-          </motion.div>
-        ) : showFriendsTab === "friends" ? (
+        ) : showFriendsTab ? (
           <motion.div
             key="friends-list"
             initial={{ opacity: 0 }}
