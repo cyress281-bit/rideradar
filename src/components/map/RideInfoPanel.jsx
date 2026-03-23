@@ -181,5 +181,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
           )}
         </div>
       </div>
+      )}
+    </motion.div>
   );
 }
