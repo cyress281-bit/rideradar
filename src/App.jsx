@@ -18,7 +18,7 @@ const LiveGrid = lazy(() => import('./pages/LiveGrid'));
 const Rides = lazy(() => import('./pages/Rides'));
 const RideDetails = lazy(() => import('./pages/RideDetails'));
 const CreateRide = lazy(() => import('./pages/CreateRide'));
-const Profile = lazy(() => import('./pages/Profile.js'));
+const Profile = lazy(() => import('./pages/Profile'));
 const Messages = lazy(() => import('./pages/Messages'));
 
 const PageLoader = () => (
