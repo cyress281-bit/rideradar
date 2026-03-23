@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
-
-import { Users, Clock, MapPin, UserPlus, Check, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Users, Clock, MapPin, UserPlus, Check } from "lucide-react";
+import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { base44 } from "@/api/base44Client";
 
 const vibeColors = {
-  chill: "border-blue-500/30",
-  fast: "border-red-500/30",
-  night_ride: "border-purple-500/30",
-  scenic: "border-green-500/30",
-  adventure: "border-amber-500/30",
-  commute: "border-gray-500/30",
+  chill: "bg-blue-500/15 text-blue-400 border-blue-500/20 border",
+  fast: "bg-red-500/15 text-red-400 border-red-500/20 border",
+  night_ride: "bg-purple-500/15 text-purple-400 border-purple-500/20 border",
+  scenic: "bg-green-500/15 text-green-400 border-green-500/20 border",
+  adventure: "bg-amber-500/15 text-amber-400 border-amber-500/20 border",
+  commute: "bg-gray-500/15 text-gray-400 border-gray-500/20 border",
 };
 
 const vibeAccent = {
@@ -33,14 +32,12 @@ const vibeEmoji = {
 };
 
 export default function RidePreviewCard({ ride, index = 0, user }) {
-  const [expanded, setExpanded] = useState(false);
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
 
   const startTime = new Date(ride.start_time);
   const timeLabel = formatDistanceToNow(startTime, { addSuffix: true });
-  const borderClass = vibeColors[ride.vibe] || "border-border/50";
   const accentClass = vibeAccent[ride.vibe] || "text-muted-foreground";
   const emoji = vibeEmoji[ride.vibe] || "🏍️";
 
@@ -75,106 +72,94 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={`rounded-xl border bg-secondary/40 ${borderClass} overflow-hidden`}
+      className="rounded-xl border border-border bg-secondary/40 overflow-hidden"
     >
-      {/* Collapsed row — always visible */}
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
-      >
-        {/* Live dot or vibe emoji */}
-        {ride.status === "active" ? (
-          <span className="relative flex h-2 w-2 flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-          </span>
-        ) : (
-          <span className="text-sm flex-shrink-0">{emoji}</span>
-        )}
-
-        {/* Title */}
-        <span className="font-semibold text-xs truncate flex-1">{ride.title}</span>
-
-        {/* Rider count */}
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground flex-shrink-0">
-          <Users className="w-3 h-3" />
-          {ride.rider_count || 1}
-        </span>
-
-        {/* Chevron */}
-        <motion.div
-          animate={{ rotate: expanded ? 90 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex-shrink-0"
-        >
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-        </motion.div>
-      </button>
-
-      {/* Expanded details */}
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            key="expanded"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 space-y-2.5 border-t border-border/40 pt-2.5">
-              {/* Host + time */}
-              <div className="flex items-center justify-between">
-                <span className={`text-[11px] font-medium ${accentClass}`}>@{ride.host_username}</span>
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  {timeLabel}
+      {/* Always show details */}
+      <div className="px-3 py-3 space-y-2.5">
+        {/* Title + Host */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              {ride.status === "active" ? (
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                 </span>
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  {ride.rider_count || 1}{ride.max_riders ? `/${ride.max_riders}` : ""} riders
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {ride.duration_minutes} min
-                </span>
-                {ride.status === "meetup" && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> Meetup phase
-                  </span>
-                )}
-              </div>
-
-              {/* Status message */}
-              {ride.status_message && (
-                <p className="text-[10px] text-primary/80 italic">"{ride.status_message}"</p>
+              ) : (
+                <span className="text-sm flex-shrink-0">{emoji}</span>
               )}
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 pt-0.5">
-
-                {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
-                  <button
-                    onClick={handleJoin}
-                    disabled={joining || joined}
-                    className={`flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                      joined
-                        ? "bg-green-500/15 text-green-400 border-green-500/20"
-                        : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25"
-                    }`}
-                  >
-                    {joined ? <><Check className="w-3 h-3" /> Joined</> : joining ? "..." : <><UserPlus className="w-3 h-3" /> Join</>}
-                  </button>
-                )}
-              </div>
+              <h3 className="font-bold text-sm truncate">{ride.title}</h3>
             </div>
-          </motion.div>
+            <p className={`text-[10px] font-medium ${accentClass}`}>@{ride.host_username}</p>
+          </div>
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground flex-shrink-0">
+            <Users className="w-3 h-3" />
+            {ride.rider_count || 1}
+          </span>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 text-[10px]">
+          <div className="bg-secondary/40 rounded-lg p-2 text-center">
+            <p className="font-bold text-primary">{timeLabel}</p>
+            <p className="text-muted-foreground">Time</p>
+          </div>
+          <div className="bg-secondary/40 rounded-lg p-2 text-center">
+            <p className="font-bold">{ride.duration_minutes}m</p>
+            <p className="text-muted-foreground">Duration</p>
+          </div>
+          <div className="bg-secondary/40 rounded-lg p-2 text-center">
+            <p className="font-bold">{ride.rider_count || 1}{ride.max_riders ? `/${ride.max_riders}` : ""}</p>
+            <p className="text-muted-foreground">Riders</p>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {(ride.vibe || ride.bike_class) && (
+          <div className="flex gap-1.5 flex-wrap">
+            {ride.vibe && (
+              <span className={`text-[9px] font-semibold px-2 py-1 rounded-full ${vibeColors[ride.vibe] || "bg-secondary text-muted-foreground"}`}>
+                {ride.vibe.replace("_", " ")}
+              </span>
+            )}
+            {ride.bike_class && ride.bike_class !== "any" && (
+              <span className="text-[9px] font-semibold px-2 py-1 rounded-full bg-secondary/60 text-muted-foreground">
+                {ride.bike_class}
+              </span>
+            )}
+          </div>
         )}
-      </AnimatePresence>
+
+        {/* Status message */}
+        {ride.status_message && (
+          <p className="text-[10px] text-primary/80 italic px-2 py-1 bg-primary/10 rounded-lg">"{ride.status_message}"</p>
+        )}
+
+        {/* Join button */}
+        {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
+          <button
+            onClick={handleJoin}
+            disabled={joining || joined}
+            className={`w-full text-[11px] font-bold px-3 py-2 rounded-lg border transition-all ${
+              joined
+                ? "bg-green-500/15 text-green-400 border-green-500/20"
+                : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25"
+            }`}
+          >
+            {joined ? (
+              <>
+                <Check className="w-3 h-3 inline mr-1" /> Joined
+              </>
+            ) : joining ? (
+              "Joining..."
+            ) : (
+              <>
+                <UserPlus className="w-3 h-3 inline mr-1" /> Quick Join
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </motion.div>
   );
 }
