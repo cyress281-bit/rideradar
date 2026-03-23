@@ -1,18 +1,76 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { MessageSquare, Users, Clock } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, Users, Plus, X, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import RideChat from "@/components/rides/RideChat";
+import DirectMessageChat from "@/components/messages/DirectMessageChat";
+import { Input } from "@/components/ui/input";
 
 export default function Messages() {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [selectedRide, setSelectedRide] = useState(null);
+  const [selectedFriend, setSelectedFriend] = useState(null);
+  const [showFriendsTab, setShowFriendsTab] = useState(false);
+  const [searchEmail, setSearchEmail] = useState("");
+  const [addingFriend, setAddingFriend] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  // Fetch friends
+  const { data: friendships = [] } = useQuery({
+    queryKey: ["friends", user?.email],
+    queryFn: async () => {
+      const sent = await base44.entities.UserFriend.filter({ user_email: user.email, status: "accepted" });
+      const received = await base44.entities.UserFriend.filter({ friend_email: user.email, status: "accepted" });
+      return [...sent, ...received];
+    },
+    enabled: !!user?.email,
+  });
+
+  const friends = friendships.map((f) => ({
+    email: f.user_email === user.email ? f.friend_email : f.user_email,
+  }));
+
+  // Latest DM per friend
+  const { data: latestDMs = [] } = useQuery({
+    queryKey: ["latest-dms", friends.map((f) => f.email).join(",")],
+    queryFn: async () => {
+      if (friends.length === 0) return [];
+      const results = await Promise.all(
+        friends.map((f) => {
+          const cid = [user.email, f.email].sort().join("|");
+          return base44.entities.DirectMessage.filter({ conversation_id: cid }, "-created_date", 1);
+        })
+      );
+      return results.flat();
+    },
+    enabled: friends.length > 0,
+    refetchInterval: 10000,
+  });
+
+  const handleAddFriend = async () => {
+    if (!searchEmail.trim()) return;
+    setAddingFriend(true);
+    // Check if already friends
+    const existing = friendships.find((f) => (f.user_email === searchEmail || f.friend_email === searchEmail) && f.status === "accepted");
+    if (existing) {
+      setAddingFriend(false);
+      return;
+    }
+    await base44.entities.UserFriend.create({
+      user_email: user.email,
+      friend_email: searchEmail,
+      status: "accepted",
+    });
+    setSearchEmail("");
+    setAddingFriend(false);
+    queryClient.invalidateQueries({ queryKey: ["friends", user.email] });
+  };
 
   // Rides where user is a participant or host
   const { data: participations = [] } = useQuery({
@@ -76,11 +134,117 @@ export default function Messages() {
       {/* Header */}
       <div className="px-5 pt-6 pb-4 border-b border-border">
         <h1 className="text-xl font-bold tracking-tight">Messages</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Your ride group chats</p>
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => setShowFriendsTab(false)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              !showFriendsTab ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
+            }`}
+          >
+            Rides
+          </button>
+          <button
+            onClick={() => setShowFriendsTab(true)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              showFriendsTab ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
+            }`}
+          >
+            Friends {friends.length > 0 && `(${friends.length})`}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
-        {selectedRide ? (
+        {selectedFriend ? (
+          <motion.div
+            key="dm-chat"
+            initial={{ x: 40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 40, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col h-[calc(100vh-140px)]"
+          >
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
+              <button
+                onClick={() => setSelectedFriend(null)}
+                className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-lg"
+              >
+                ‹
+              </button>
+              <div className="flex-1">
+                <p className="text-sm font-bold">{selectedFriend.email}</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-3">
+              <DirectMessageChat friend={selectedFriend} user={user} />
+            </div>
+          </motion.div>
+        ) : showFriendsTab ? (
+          <motion.div
+            key="friends-list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Add friend form */}
+            <div className="px-5 py-4 border-b border-border space-y-2">
+              <label className="text-xs text-muted-foreground font-semibold">Add by email</label>
+              <div className="flex gap-2">
+                <Input
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
+                  placeholder="friend@example.com"
+                  className="bg-secondary border-border flex-1 text-sm h-9"
+                />
+                <button
+                  onClick={handleAddFriend}
+                  disabled={addingFriend || !searchEmail.trim()}
+                  className="h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg text-xs transition-colors disabled:opacity-50"
+                >
+                  {addingFriend ? "..." : <Plus className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {friends.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
+                <Users className="w-12 h-12 text-muted-foreground/20 mb-4" />
+                <p className="text-sm font-semibold text-muted-foreground">No friends yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Add a friend to start messaging</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {friends.map((friend, i) => {
+                  const latest = latestDMs.find((m) => m.recipient_email === friend.email || m.sender_email === friend.email);
+                  return (
+                    <motion.button
+                      key={friend.email}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      onClick={() => setSelectedFriend(friend)}
+                      className="w-full flex items-center gap-3 px-5 py-4 hover:bg-secondary/30 transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary">{friend.email[0].toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{friend.email}</p>
+                        {latest && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {latest.sender_email === user.email ? "You: " : ""}
+                            {latest.text}
+                          </p>
+                        )}
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        ) : selectedRide ? (
           <motion.div
             key="chat"
             initial={{ x: 40, opacity: 0 }}
@@ -114,7 +278,6 @@ export default function Messages() {
             </div>
           </motion.div>
         ) : (
-          <motion.div
             key="list"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
