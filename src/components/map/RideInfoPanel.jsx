@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Clock, Users, Bike, MapPin, UserPlus, Check, MessageSquare, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { formatDistanceToNow } from "date-fns";
 import RideChat from "@/components/rides/RideChat";
+import RiderProfileModal from "@/components/modals/RiderProfileModal";
 
 const vibeColors = {
   chill: "bg-blue-500/15 text-blue-400 border-blue-500/20",
@@ -20,6 +21,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [selectedRider, setSelectedRider] = useState(null);
 
   const approved = participants.filter((p) => p.status === "approved");
   const checkedIn = riderLocations.filter((l) => l.checked_in && l.ride_id === ride.id);
@@ -152,6 +154,25 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
         {ride.status_message && (
           <p className="text-xs text-primary/80 italic mb-3">"{ride.status_message}"</p>
         )}
+
+        {/* Participants list */}
+        <div className="mb-3">
+          <p className="text-xs text-muted-foreground font-semibold mb-2">Riders ({approved.length})</p>
+          <div className="space-y-1.5 max-h-32 overflow-y-auto">
+            {approved.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedRider({ email: p.user_email, username: p.username })}
+                className="w-full text-left flex items-center gap-2 p-2 rounded-lg bg-secondary/40 hover:bg-secondary/60 transition-colors text-xs"
+              >
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-primary">{p.username?.[0]?.toUpperCase()}</span>
+                </div>
+                <span className="text-foreground font-medium truncate">@{p.username}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Action buttons */}
         <div className="flex gap-2">
