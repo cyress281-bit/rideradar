@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+
 import { Users, Clock, MapPin, UserPlus, Check, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -156,12 +156,6 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-0.5">
-                <Link
-                  to={`/rides/${ride.id}`}
-                  className="flex-1 text-center text-[11px] font-semibold py-1.5 rounded-lg bg-secondary border border-border hover:bg-secondary/80 transition-colors"
-                >
-                  View Details
-                </Link>
 
                 {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
                   <button
