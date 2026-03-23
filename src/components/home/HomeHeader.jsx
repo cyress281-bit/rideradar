@@ -12,9 +12,11 @@ export default function HomeHeader({ username }) {
           animate={{ scale: 1, opacity: 1 }}
           className="relative"
         >
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_14px_rgba(0,240,50,0.6)]">
-            <Zap className="w-5 h-5 text-primary-foreground" fill="currentColor" />
-          </div>
+          <img
+            src="https://media.base44.com/images/public/69c00371996a3698d9301734/27c378d8b_generated_image.png"
+            alt="RideRadar logo"
+            className="w-9 h-9 rounded-xl object-cover shadow-[0_0_14px_rgba(0,240,50,0.6)]"
+          />
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background shadow-[0_0_6px_rgba(0,240,50,0.8)]" />
         </motion.div>
         <div>
