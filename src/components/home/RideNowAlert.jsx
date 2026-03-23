@@ -41,7 +41,7 @@ export default function RideNowAlert({ user }) {
       if (!isForMe) return;
 
       // Skip if this user is the host
-      if (user && notif.host_username === (user.username || user.email?.split("@")[0])) return;
+      if (user && (notif.host_email === user.email || notif.host_username === (user.username || user.email?.split("@")[0]))) return;
 
       let distLabel = "nearby";
       if (userPos && notif.meetup_lat && notif.meetup_lng) {
