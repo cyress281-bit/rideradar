@@ -57,14 +57,15 @@ export default function NotificationCenter({ user }) {
 
   // Real-time subscriptions
   useEffect(() => {
+    if (!user?.email) return;
     const unsub1 = base44.entities.UserFriend.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["friend-requests", user?.email] });
+      queryClient.invalidateQueries({ queryKey: ["friend-requests", user.email] });
     });
     const unsub2 = base44.entities.DirectMessage.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["unread-dms"] });
     });
     const unsub3 = base44.entities.RideNotification.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["ride-notifications", user?.email] });
+      queryClient.invalidateQueries({ queryKey: ["ride-notifications", user.email] });
     });
     return () => {
       unsub1();
