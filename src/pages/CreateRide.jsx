@@ -47,6 +47,7 @@ export default function CreateRide() {
     requirements: "",
     meetup_address: "",
     location_name: "",
+    registration_fee: "",
   });
 
   useEffect(() => {
