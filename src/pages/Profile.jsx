@@ -5,40 +5,37 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX, Camera, Loader
-} from "lucide-react";
+import { Camera, Loader, Star, Route, Eye, EyeOff, Save, LogOut, UserX, Settings, Grid3X3, Bike } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
 import MotorcycleModels from "@/components/profile/MotorcycleModels";
 import RideHistory from "@/components/profile/RideHistory";
+import GarageGallery from "@/components/profile/GarageGallery";
 
 const vibeOptions = [
-  { value: "chill", label: "Chill" },
-  { value: "fast", label: "Fast" },
-  { value: "night_ride", label: "Night Ride" },
-  { value: "scenic", label: "Scenic" },
-  { value: "adventure", label: "Adventure" },
-  { value: "commute", label: "Commute" },
+  { value: "chill", label: "😌 Chill" },
+  { value: "fast", label: "⚡ Fast" },
+  { value: "night_ride", label: "🌙 Night Ride" },
+  { value: "scenic", label: "🏔️ Scenic" },
+  { value: "adventure", label: "🧭 Adventure" },
+  { value: "commute", label: "🛣️ Commute" },
+];
+
+const TABS = [
+  { id: "garage", label: "Garage", icon: Grid3X3 },
+  { id: "rides", label: "Rides", icon: Route },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("garage");
   const [form, setForm] = useState({
-    username: "",
-    profile_pic_url: "",
-    bike_make: "",
-    bike_model: "",
-    bike_year: "",
-    bike_class: "",
-    motorcycle_models: [],
-    ride_preferences: [],
-    invisible_mode: false,
+    username: "", bio: "", profile_pic_url: "", bike_make: "", bike_model: "",
+    bike_year: "", bike_class: "", motorcycle_models: [], ride_preferences: [], invisible_mode: false,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -47,6 +44,7 @@ export default function Profile() {
       setUser(u);
       setForm({
         username: u.username || u.email?.split("@")[0] || "",
+        bio: u.bio || "",
         profile_pic_url: u.profile_pic_url || "",
         bike_make: u.bike_make || "",
         bike_model: u.bike_model || "",
@@ -65,25 +63,28 @@ export default function Profile() {
     enabled: !!user?.email,
   });
 
+  const { data: garagePosts = [] } = useQuery({
+    queryKey: ["garage-posts-count", user?.email],
+    queryFn: () => base44.entities.GaragePost.filter({ user_email: user.email }, "-created_date", 1),
+    enabled: !!user?.email,
+  });
+
   const handlePicUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setForm((f) => ({ ...f, profile_pic_url: file_url }));
-      toast({ title: "Photo uploaded!" });
-    } catch (err) {
-      toast({ title: "Upload failed", variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm((f) => ({ ...f, profile_pic_url: file_url }));
+    await base44.auth.updateMe({ profile_pic_url: file_url });
+    toast({ title: "Photo updated!" });
+    setUploading(false);
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       await base44.auth.updateMe({
         username: form.username,
+        bio: form.bio,
         profile_pic_url: form.profile_pic_url || undefined,
         bike_make: form.bike_make,
         bike_model: form.bike_model,
@@ -94,9 +95,7 @@ export default function Profile() {
         invisible_mode: form.invisible_mode,
       });
     },
-    onSuccess: () => {
-      toast({ title: "Profile saved!" });
-    },
+    onSuccess: () => toast({ title: "Profile saved!" }),
   });
 
   const toggleVibe = (vibe) => {
@@ -110,200 +109,238 @@ export default function Profile() {
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  return (
-    <div className="min-h-screen pb-24">
-      <div className="px-5 pt-4 pb-3">
-        <h1 className="text-lg font-bold">Profile</h1>
-        <p className="text-xs text-muted-foreground">Your rider identity</p>
-      </div>
+  const initials = form.username?.[0]?.toUpperCase() || "?";
 
-      <div className="px-5 space-y-6">
-        {/* Avatar area with upload */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-4"
+  return (
+    <div className="min-h-screen pb-28">
+      {/* TikTok-style profile header */}
+      <div className="flex flex-col items-center pt-8 pb-5 px-5">
+        {/* Avatar */}
+        <motion.label
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="relative cursor-pointer group mb-3"
         >
-          <label className="relative cursor-pointer group">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
-              {form.profile_pic_url ? (
-                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-2xl font-bold text-primary">
-                  {form.username?.[0]?.toUpperCase() || "?"}
-                </span>
-              )}
-            </div>
-            <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploading ? (
-                <Loader className="w-5 h-5 text-white animate-spin" />
-              ) : (
-                <Camera className="w-5 h-5 text-white" />
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePicUpload}
-              disabled={uploading}
-              className="hidden"
-            />
-          </label>
-          <div>
-            <p className="font-bold text-base">@{form.username || "anonymous"}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-                <span className="text-xs text-muted-foreground">{user?.reputation_score || 5.0}</span>
+          <div className="w-24 h-24 rounded-full bg-primary/10 border-2 border-primary/30 overflow-hidden shadow-[0_0_20px_rgba(0,240,50,0.25)]">
+            {form.profile_pic_url ? (
+              <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-4xl font-bold text-primary">{initials}</span>
               </div>
-              <span className="text-xs text-muted-foreground">·</span>
-              <div className="flex items-center gap-1">
-                <Route className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{user?.total_rides || 0} rides</span>
-              </div>
-            </div>
+            )}
           </div>
-        </motion.div>
+          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {uploading ? (
+              <Loader className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </div>
+          <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+            <Camera className="w-3.5 h-3.5 text-primary-foreground" />
+          </div>
+          <input type="file" accept="image/*" onChange={handlePicUpload} disabled={uploading} className="hidden" />
+        </motion.label>
 
         {/* Username */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5" /> Username
-          </Label>
-          <Input
-            value={form.username}
-            onChange={(e) => updateField("username", e.target.value)}
-            className="bg-secondary border-border"
-            placeholder="Choose a username"
-          />
-        </div>
+        <h2 className="text-lg font-bold">@{form.username || "anonymous"}</h2>
 
-        {/* Primary Bike info */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Bike className="w-3.5 h-3.5" /> Primary Bike
-          </Label>
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
-            <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
-            <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
-          </div>
-          <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
-            <SelectTrigger className="bg-secondary border-border">
-              <SelectValue placeholder="Bike class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sportbike">Sportbike</SelectItem>
-              <SelectItem value="cruiser">Cruiser</SelectItem>
-              <SelectItem value="adventure">Adventure</SelectItem>
-              <SelectItem value="naked">Naked</SelectItem>
-              <SelectItem value="touring">Touring</SelectItem>
-              <SelectItem value="dual_sport">Dual Sport</SelectItem>
-              <SelectItem value="scooter">Scooter</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Motorcycle models */}
-        <MotorcycleModels
-          models={form.motorcycle_models}
-          onUpdate={(models) => updateField("motorcycle_models", models)}
-        />
-
-        {/* Ride preferences */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2">Ride Preferences</Label>
-          <div className="flex flex-wrap gap-2">
-            {vibeOptions.map((v) => (
-              <button
-                key={v.value}
-                onClick={() => toggleVibe(v.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                  form.ride_preferences.includes(v.value)
-                    ? "bg-primary/15 text-primary border-primary/30"
-                    : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60"
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Privacy */}
-        <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {form.invisible_mode ? (
-                <EyeOff className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <Eye className="w-4 h-4 text-primary" />
-              )}
-              <div>
-                <p className="text-sm font-medium">Invisible Mode</p>
-                <p className="text-[11px] text-muted-foreground">Hide your rides from the map</p>
-              </div>
-            </div>
-            <Switch
-              checked={form.invisible_mode}
-              onCheckedChange={(v) => updateField("invisible_mode", v)}
-            />
-          </div>
-        </div>
-
-        {/* Ride History */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Route className="w-3.5 h-3.5" /> Ride History
-          </Label>
-          {user && <RideHistory userEmail={user.email} />}
-        </div>
-
-        {/* Blocked users */}
-        {blocks.length > 0 && (
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <UserX className="w-3.5 h-3.5" /> Blocked Users ({blocks.length})
-            </Label>
-            <div className="space-y-1.5">
-              {blocks.map((b) => (
-                <div key={b.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-2.5 border border-border/50">
-                  <span className="text-xs">{b.blocked_email}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 text-[10px] text-destructive"
-                    onClick={async () => {
-                      await base44.entities.UserBlock.delete(b.id);
-                      queryClient.invalidateQueries({ queryKey: ["my-blocks"] });
-                    }}
-                  >
-                    Unblock
-                  </Button>
-                </div>
-              ))}
-            </div>
+        {/* Bike badge */}
+        {(form.bike_make || form.bike_model) && (
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+            <Bike className="w-3.5 h-3.5" />
+            <span>{[form.bike_year, form.bike_make, form.bike_model].filter(Boolean).join(" ")}</span>
           </div>
         )}
 
-        {/* Save */}
-        <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
-          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saveMutation.isPending ? "Saving..." : "Save Profile"}
-        </Button>
+        {/* Bio */}
+        {form.bio && (
+          <p className="text-sm text-center text-muted-foreground mt-2 max-w-xs leading-snug">{form.bio}</p>
+        )}
 
-        <Button
-          variant="ghost"
-          className="w-full text-muted-foreground hover:text-foreground"
-          onClick={() => base44.auth.logout()}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
+        {/* Stats row */}
+        <div className="flex items-center gap-8 mt-4">
+          <div className="text-center">
+            <p className="text-base font-bold">{user?.total_rides || 0}</p>
+            <p className="text-[10px] text-muted-foreground">Rides</p>
+          </div>
+          <div className="text-center">
+            <p className="text-base font-bold flex items-center gap-0.5">
+              <Star className="w-3.5 h-3.5 text-amber-400 inline" fill="currentColor" />
+              {user?.reputation_score || "5.0"}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Rep</p>
+          </div>
+          <div className="text-center">
+            <p className="text-base font-bold">{form.motorcycle_models?.length || 0}</p>
+            <p className="text-[10px] text-muted-foreground">Bikes</p>
+          </div>
+        </div>
+
+        {/* Vibe tags */}
+        {form.ride_preferences.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1.5 mt-3 max-w-xs">
+            {form.ride_preferences.map((v) => {
+              const opt = vibeOptions.find((o) => o.value === v);
+              return (
+                <span key={v} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                  {opt?.label || v}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors relative ${
+                activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground/70"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      <div className="px-4 pt-4">
+        {activeTab === "garage" && <GarageGallery user={user} />}
+
+        {activeTab === "rides" && (
+          <div>
+            {user && <RideHistory userEmail={user.email} />}
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="space-y-5">
+            {/* Username */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Username</Label>
+              <Input value={form.username} onChange={(e) => updateField("username", e.target.value)} className="bg-secondary border-border" placeholder="Choose a username" />
+            </div>
+
+            {/* Bio */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Bio</Label>
+              <textarea
+                value={form.bio}
+                onChange={(e) => updateField("bio", e.target.value)}
+                placeholder="Tell riders about yourself..."
+                maxLength={150}
+                rows={3}
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+              <p className="text-[10px] text-muted-foreground text-right mt-0.5">{form.bio.length}/150</p>
+            </div>
+
+            {/* Primary Bike */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Primary Bike</Label>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
+                <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
+                <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
+              </div>
+              <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Bike class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sportbike">Sportbike</SelectItem>
+                  <SelectItem value="cruiser">Cruiser</SelectItem>
+                  <SelectItem value="adventure">Adventure</SelectItem>
+                  <SelectItem value="naked">Naked</SelectItem>
+                  <SelectItem value="touring">Touring</SelectItem>
+                  <SelectItem value="dual_sport">Dual Sport</SelectItem>
+                  <SelectItem value="scooter">Scooter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Motorcycle models */}
+            <MotorcycleModels models={form.motorcycle_models} onUpdate={(models) => updateField("motorcycle_models", models)} />
+
+            {/* Ride preferences */}
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Ride Preferences</Label>
+              <div className="flex flex-wrap gap-2">
+                {vibeOptions.map((v) => (
+                  <button
+                    key={v.value}
+                    onClick={() => toggleVibe(v.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                      form.ride_preferences.includes(v.value)
+                        ? "bg-primary/15 text-primary border-primary/30"
+                        : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60"
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Privacy */}
+            <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {form.invisible_mode ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-primary" />}
+                  <div>
+                    <p className="text-sm font-medium">Invisible Mode</p>
+                    <p className="text-[11px] text-muted-foreground">Hide your rides from the map</p>
+                  </div>
+                </div>
+                <Switch checked={form.invisible_mode} onCheckedChange={(v) => updateField("invisible_mode", v)} />
+              </div>
+            </div>
+
+            {/* Blocked users */}
+            {blocks.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <UserX className="w-3.5 h-3.5" /> Blocked Users ({blocks.length})
+                </Label>
+                <div className="space-y-1.5">
+                  {blocks.map((b) => (
+                    <div key={b.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-2.5 border border-border/50">
+                      <span className="text-xs">{b.blocked_email}</span>
+                      <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive"
+                        onClick={async () => {
+                          await base44.entities.UserBlock.delete(b.id);
+                          queryClient.invalidateQueries({ queryKey: ["my-blocks"] });
+                        }}
+                      >Unblock</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Save */}
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl">
+              <Save className="w-4 h-4 mr-2" />
+              {saveMutation.isPending ? "Saving..." : "Save Profile"}
+            </Button>
+
+            <Button variant="ghost" className="w-full text-muted-foreground hover:text-foreground" onClick={() => base44.auth.logout()}>
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
