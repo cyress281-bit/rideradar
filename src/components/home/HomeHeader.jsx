@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { User, Zap } from "lucide-react";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { motion } from "framer-motion";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
@@ -26,7 +27,10 @@ export default function HomeHeader({ username, user }) {
         </div>
       </div>
 
-      <NotificationBell user={user} />
+      <div className="flex items-center gap-2">
+        <NotificationCenter user={user} />
+        <NotificationBell user={user} />
+      </div>
     </div>
   );
 }
