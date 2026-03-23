@@ -72,7 +72,7 @@ export default function NotificationCenter({ user }) {
       unsub2();
       unsub3();
     };
-  }, [user?.email, queryClient]);
+  }, [user?.email]);
 
   // Build notification list
   useEffect(() => {
