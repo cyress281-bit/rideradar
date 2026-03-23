@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Users, Clock, MapPin, UserPlus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -90,12 +91,13 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="rounded-xl border border-border bg-secondary/40 overflow-hidden"
-    >
+    <Link to={`/ride/${ride.id}`}>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="rounded-xl border border-border bg-secondary/40 overflow-hidden hover:bg-secondary/50 transition-colors cursor-pointer"
+      >
       {/* Always show details */}
       <div className="px-3 py-3 space-y-2.5">
         {/* Title + Host */}
@@ -187,5 +189,6 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
         )}
       </div>
     </motion.div>
+    </Link>
   );
 }
