@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Users, MapPin, Clock, Bike } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Clock, Bike, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import RideChat from "@/components/rides/RideChat";
 
@@ -22,6 +23,7 @@ export default function RideDetail() {
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [showRiders, setShowRiders] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -131,10 +133,13 @@ export default function RideDetail() {
 
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-secondary/50 rounded-xl p-3">
+          <button
+            onClick={() => setShowRiders(true)}
+            className="bg-secondary/50 rounded-xl p-3 hover:bg-secondary/70 transition-colors text-left"
+          >
             <p className="text-xs text-muted-foreground mb-1">Riders</p>
             <p className="text-lg font-bold">{participants.length}</p>
-          </div>
+          </button>
           <div className="bg-secondary/50 rounded-xl p-3">
             <p className="text-xs text-muted-foreground mb-1">Duration</p>
             <p className="text-lg font-bold">{ride.duration_minutes}m</p>
@@ -160,13 +165,7 @@ export default function RideDetail() {
           </div>
         )}
 
-        {/* Requirements */}
-        {ride.requirements && (
-          <div className="bg-secondary/30 rounded-xl p-3">
-            <p className="text-xs text-muted-foreground mb-1">Requirements</p>
-            <p className="text-sm">{ride.requirements}</p>
-          </div>
-        )}
+
 
         {/* Join Button */}
         {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
@@ -200,6 +199,58 @@ export default function RideDetail() {
           rideStatus={ride.status}
         />
       </div>
+
+      {/* Riders Modal */}
+      <AnimatePresence>
+        {showRiders && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRiders(false)}
+              className="fixed inset-0 bg-black/40 z-40"
+            />
+            <motion.div
+              initial={{ y: 300, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 300, opacity: 0 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl border-t border-border max-h-[70vh] overflow-y-auto"
+            >
+              <div className="sticky top-0 flex items-center justify-between px-4 py-3 border-b border-border bg-card/95 backdrop-blur-sm">
+                <h2 className="font-bold">Riders ({participants.length})</h2>
+                <button
+                  onClick={() => setShowRiders(false)}
+                  className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="divide-y divide-border">
+                {participants.map((participant) => (
+                  <Link
+                    key={participant.id}
+                    to={`/profile?email=${encodeURIComponent(participant.user_email)}`}
+                    onClick={() => setShowRiders(false)}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">{participant.username[0].toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{participant.username}</p>
+                      <p className="text-xs text-muted-foreground truncate">{participant.user_email}</p>
+                    </div>
+                    {participant.role === "host" && (
+                      <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">HOST</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
