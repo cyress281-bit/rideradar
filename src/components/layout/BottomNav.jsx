@@ -41,15 +41,12 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border select-none" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label="Main navigation">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2" role="tablist">
-        {navItems.map((item) => {
+        {navItems.slice(0, 2).map((item) => {
           const isActive = currentTab === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => {
-                haptic("selection");
-                switchTab(item.id);
-              }}
+              onClick={() => { haptic("selection"); switchTab(item.id); }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px] rounded-lg transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
@@ -61,51 +58,76 @@ export default function BottomNav() {
               tabIndex={isActive ? 0 : -1}
             >
               {isActive && (
-                <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full"
-                />
+                <motion.div layoutId="nav-indicator" className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
               )}
               <div className="relative">
-                <item.icon
-                  className={`w-5 h-5 transition-colors ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}
-                />
+                <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                 {item.badge === "unreadCount" && directMessages.length > 0 && (
                   <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                     {directMessages.length > 9 ? "9+" : directMessages.length}
                   </div>
                 )}
               </div>
-              <span
-                className={`text-xs mt-1 font-medium transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
+              <span className={`text-xs mt-1 font-medium transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                 {item.label}
               </span>
             </button>
           );
         })}
-        
-        {/* Create Ride Button */}
-        <Link to="/create-ride">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px] rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            aria-label="Create a new ride"
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary rounded-full blur-sm opacity-40" />
-              <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
-                <Plus className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} aria-hidden="true" />
+
+        {/* Create Ride Button — centered, raised above nav */}
+        <div className="flex-1 flex items-center justify-center">
+          <Link to="/create-ride" className="!min-h-0 !min-w-0" style={{ marginBottom: '20px' }}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              aria-label="Create a new ride"
+            >
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary rounded-full blur-sm opacity-40" />
+                <div className="relative w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
+                  <Plus className="w-6 h-6 text-primary-foreground" strokeWidth={2.5} aria-hidden="true" />
+                </div>
               </div>
-            </div>
-            <span className="text-xs mt-1 font-medium text-primary">Create</span>
-          </motion.button>
-        </Link>
+              <span className="text-xs mt-1 font-medium text-primary">Create</span>
+            </motion.button>
+          </Link>
+        </div>
+
+        {navItems.slice(2).map((item) => {
+          const isActive = currentTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => { haptic("selection"); switchTab(item.id); }}
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 relative min-h-[44px] rounded-lg transition-colors",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              )}
+              role="tab"
+              aria-label={`${item.label} tab`}
+              aria-selected={isActive}
+              aria-current={isActive ? "page" : undefined}
+              tabIndex={isActive ? 0 : -1}
+            >
+              {isActive && (
+                <motion.div layoutId="nav-indicator" className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+              )}
+              <div className="relative">
+                <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                {item.badge === "unreadCount" && directMessages.length > 0 && (
+                  <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                    {directMessages.length > 9 ? "9+" : directMessages.length}
+                  </div>
+                )}
+              </div>
+              <span className={`text-xs mt-1 font-medium transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
