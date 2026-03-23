@@ -99,6 +99,17 @@ export default function LiveGrid() {
     return unsub;
   }, [queryClient]);
 
+  // Stable refs to avoid GPS watch restart on every poll cycle
+  const ridesRef = useRef([]);
+  const allParticipantsRef = useRef([]);
+  const riderLocationsRef = useRef([]);
+  const checkedInRidesRef = useRef(new Set());
+
+  useEffect(() => { ridesRef.current = rides; }, [rides]);
+  useEffect(() => { allParticipantsRef.current = allParticipants; }, [allParticipants]);
+  useEffect(() => { riderLocationsRef.current = riderLocations; }, [riderLocations]);
+  useEffect(() => { checkedInRidesRef.current = checkedInRides; }, [checkedInRides]);
+
   // Update or create location record for user in a ride
   const upsertLocation = useCallback(async (ride, lat, lng, checkedIn) => {
     if (!user) return;
