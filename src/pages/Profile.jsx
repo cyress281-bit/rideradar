@@ -7,31 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import SelectDrawer from "@/components/SelectDrawer";
 import DeleteAccountDialogs from "@/components/profile/DeleteAccountDialogs";
+import ProfileHero from "@/components/profile/ProfileHero";
+import ProfileRidesTab from "@/components/profile/ProfileRidesTab";
+import ProfileBikesTab from "@/components/profile/ProfileBikesTab";
+import ProfileReviewsTab from "@/components/profile/ProfileReviewsTab";
 import {
-  User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX, Camera, Loader
+  User, Bike, Eye, EyeOff, Save, LogOut, Settings, Star, Route, MessageSquare
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { motion } from "framer-motion";
-import MotorcycleModels from "@/components/profile/MotorcycleModels";
-import RideHistory from "@/components/profile/RideHistory";
+import { motion, AnimatePresence } from "framer-motion";
 
-const vibeOptions = [
-  { value: "chill", label: "Chill" },
-  { value: "fast", label: "Fast" },
-  { value: "night_ride", label: "Night Ride" },
-  { value: "scenic", label: "Scenic" },
-  { value: "adventure", label: "Adventure" },
-  { value: "commute", label: "Commute" },
+const TABS = [
+  { id: "rides", label: "Rides", icon: Route },
+  { id: "bikes", label: "Bikes", icon: Bike },
+  { id: "reviews", label: "Reviews", icon: Star },
 ];
 
 export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("rides");
+  const [showSettings, setShowSettings] = useState(false);
   const [form, setForm] = useState({
     username: "",
     profile_pic_url: "",
@@ -63,11 +62,34 @@ export default function Profile() {
     }).catch(() => {});
   }, []);
 
-  const { data: blocks = [] } = useQuery({
-    queryKey: ["my-blocks", user?.email],
-    queryFn: () => base44.entities.UserBlock.filter({ blocker_email: user.email }),
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["my-reviews", user?.email],
+    queryFn: () => base44.entities.Review.filter({ reviewee_email: user.email }, "-created_date", 50),
     enabled: !!user?.email,
   });
+
+  const { data: rideParticipations = [] } = useQuery({
+    queryKey: ["profile-participations", user?.email],
+    queryFn: () => base44.entities.RideParticipant.filter({ user_email: user.email, status: "approved" }, "-created_date", 50),
+    enabled: !!user?.email,
+  });
+
+  const { data: rides = [] } = useQuery({
+    queryKey: ["profile-rides", rideParticipations.map(p => p.ride_id).join(",")],
+    queryFn: async () => {
+      if (!rideParticipations.length) return [];
+      const rideIds = rideParticipations.map(p => p.ride_id);
+      const results = await Promise.all(rideIds.slice(0, 20).map(id =>
+        base44.entities.Ride.filter({ id }, "-start_time", 1).then(r => r[0]).catch(() => null)
+      ));
+      return results.filter(Boolean);
+    },
+    enabled: rideParticipations.length > 0,
+  });
+
+  const avgRating = reviews.length
+    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   const handlePicUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -77,7 +99,7 @@ export default function Profile() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setForm((f) => ({ ...f, profile_pic_url: file_url }));
       toast({ title: "Photo uploaded!" });
-    } catch (err) {
+    } catch {
       toast({ title: "Upload failed", variant: "destructive" });
     } finally {
       setUploading(false);
@@ -101,228 +123,158 @@ export default function Profile() {
     { successMessage: "Profile saved!" }
   );
 
-  const toggleVibe = (vibe) => {
-    setForm((f) => ({
-      ...f,
-      ride_preferences: f.ride_preferences.includes(vibe)
-        ? f.ride_preferences.filter((v) => v !== vibe)
-        : [...f.ride_preferences, vibe],
-    }));
-  };
-
-  const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
-
   const handleDeleteAccount = async (confirmationText) => {
     setIsDeletingAccount(true);
     try {
-      await deleteUserAccount({
-        confirmationText,
-        finalConfirmation: true,
-      });
+      await deleteUserAccount({ confirmationText, finalConfirmation: true });
       toast({ title: "Account deleted successfully" });
       setTimeout(() => base44.auth.logout(), 1000);
-    } catch (err) {
+    } catch {
       toast({ title: "Deletion failed", variant: "destructive" });
     } finally {
       setIsDeletingAccount(false);
     }
   };
 
+  const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+
   return (
-    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none', overflowX: 'hidden' }}>
-      <div className="px-5 space-y-6">
-        {/* Avatar area with upload */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-4"
-        >
-          <label className="relative cursor-pointer group">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
-              {form.profile_pic_url ? (
-                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-              ) : (
-                <span className="text-2xl font-bold text-primary">
-                  {form.username?.[0]?.toUpperCase() || "?"}
-                </span>
-              )}
-            </div>
-            <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploading ? (
-                <Loader className="w-5 h-5 text-white animate-spin" />
-              ) : (
-                <Camera className="w-5 h-5 text-white" />
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePicUpload}
-              disabled={uploading}
-              className="hidden"
-            />
-          </label>
-          <div>
-            <p className="font-bold text-base">@{form.username || "anonymous"}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" />
-                <span className="text-xs text-muted-foreground">{user?.reputation_score || 5.0}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">·</span>
-              <div className="flex items-center gap-1">
-                <Route className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{user?.total_rides || 0} rides</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+    <div className="min-h-screen pb-24 bg-background" style={{ overscrollBehavior: 'none' }}>
+      {/* Hero */}
+      <ProfileHero
+        user={user}
+        form={form}
+        uploading={uploading}
+        onPicUpload={handlePicUpload}
+        avgRating={avgRating}
+        reviewCount={reviews.length}
+        rideCount={rides.length}
+        onSettingsToggle={() => setShowSettings(v => !v)}
+        showSettings={showSettings}
+      />
 
-        {/* Username */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5" /> Username
-          </Label>
-          <Input
-            value={form.username}
-            onChange={(e) => updateField("username", e.target.value)}
-            className="bg-secondary border-border"
-            placeholder="Choose a username"
-          />
-        </div>
-
-        {/* Primary Bike info */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Bike className="w-3.5 h-3.5" /> Primary Bike
-          </Label>
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
-            <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
-            <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
-          </div>
-          <SelectDrawer
-            value={form.bike_class}
-            onValueChange={(v) => updateField("bike_class", v)}
-            label="Select Bike Class"
-            placeholder="Bike class"
-            options={[
-              { value: "sportbike", label: "Sportbike" },
-              { value: "cruiser", label: "Cruiser" },
-              { value: "adventure", label: "Adventure" },
-              { value: "naked", label: "Naked" },
-              { value: "touring", label: "Touring" },
-              { value: "dual_sport", label: "Dual Sport" },
-              { value: "scooter", label: "Scooter" }
-            ]}
-          />
-        </div>
-
-        {/* Motorcycle models */}
-        <MotorcycleModels
-          models={form.motorcycle_models}
-          onUpdate={(models) => updateField("motorcycle_models", models)}
-        />
-
-        {/* Ride preferences */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2">Ride Preferences</Label>
-          <div className="flex flex-wrap gap-2">
-            {vibeOptions.map((v) => (
-              <button
-                key={v.value}
-                onClick={() => toggleVibe(v.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                  form.ride_preferences.includes(v.value)
-                    ? "bg-primary/15 text-primary border-primary/30"
-                    : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60"
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Privacy */}
-        <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {form.invisible_mode ? (
-                <EyeOff className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <Eye className="w-4 h-4 text-primary" />
-              )}
+      {/* Settings panel */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 py-4 space-y-4 bg-card/60 border-b border-border">
               <div>
-                <p className="text-sm font-medium">Invisible Mode</p>
-                <p className="text-[11px] text-muted-foreground">Hide your rides from the map</p>
+                <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5" /> Username
+                </Label>
+                <Input
+                  value={form.username}
+                  onChange={(e) => updateField("username", e.target.value)}
+                  className="bg-secondary border-border"
+                  placeholder="Choose a username"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <Bike className="w-3.5 h-3.5" /> Primary Bike
+                </Label>
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
+                  <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
+                  <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
+                </div>
+                <SelectDrawer
+                  value={form.bike_class}
+                  onValueChange={(v) => updateField("bike_class", v)}
+                  label="Select Bike Class"
+                  placeholder="Bike class"
+                  options={[
+                    { value: "sportbike", label: "Sportbike" },
+                    { value: "cruiser", label: "Cruiser" },
+                    { value: "adventure", label: "Adventure" },
+                    { value: "naked", label: "Naked" },
+                    { value: "touring", label: "Touring" },
+                    { value: "dual_sport", label: "Dual Sport" },
+                    { value: "scooter", label: "Scooter" }
+                  ]}
+                />
+              </div>
+
+              <div className="flex items-center justify-between bg-secondary/30 rounded-xl p-3 border border-border/50">
+                <div className="flex items-center gap-3">
+                  {form.invisible_mode ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-primary" />}
+                  <div>
+                    <p className="text-sm font-medium">Invisible Mode</p>
+                    <p className="text-[11px] text-muted-foreground">Hide your rides from the map</p>
+                  </div>
+                </div>
+                <Switch checked={form.invisible_mode} onCheckedChange={(v) => updateField("invisible_mode", v)} />
+              </div>
+
+              <Button
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saveMutation.isPending ? "Saving..." : "Save Profile"}
+              </Button>
+
+              <div className="flex gap-2">
+                <Button variant="ghost" className="flex-1 text-muted-foreground" onClick={() => base44.auth.logout()}>
+                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                </Button>
+                <DeleteAccountDialogs onConfirmDelete={handleDeleteAccount} isDeleting={isDeletingAccount} />
               </div>
             </div>
-            <Switch
-              checked={form.invisible_mode}
-              onCheckedChange={(v) => updateField("invisible_mode", v)}
-            />
-          </div>
-        </div>
-
-        {/* Ride History */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Route className="w-3.5 h-3.5" /> Ride History
-          </Label>
-          {user && <RideHistory userEmail={user.email} />}
-        </div>
-
-        {/* Blocked users */}
-        {blocks.length > 0 && (
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <UserX className="w-3.5 h-3.5" /> Blocked Users ({blocks.length})
-            </Label>
-            <div className="space-y-1.5">
-              {blocks.map((b) => (
-                <div key={b.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-2.5 border border-border/50">
-                  <span className="text-xs">{b.blocked_email}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 text-[10px] text-destructive"
-                    onClick={async () => {
-                      await base44.entities.UserBlock.delete(b.id);
-                      queryClient.invalidateQueries({ queryKey: ["my-blocks"] });
-                    }}
-                  >
-                    Unblock
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Save */}
-        <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
-          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saveMutation.isPending ? "Saving..." : "Save Profile"}
-        </Button>
+      {/* Tabs */}
+      <div className="flex border-b border-border px-5 gap-1 sticky top-0 bg-background z-10">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                isActive ? "border-primary text-foreground" : "border-transparent text-muted-foreground"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+              {tab.id === "reviews" && reviews.length > 0 && (
+                <span className="ml-1 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">{reviews.length}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-        <Button
-          variant="ghost"
-          className="w-full text-muted-foreground hover:text-foreground select-none"
-          onClick={() => base44.auth.logout()}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
-
-        <DeleteAccountDialogs
-          onConfirmDelete={handleDeleteAccount}
-          isDeleting={isDeletingAccount}
-        />
+      {/* Tab Content */}
+      <div className="px-5 pt-4">
+        {activeTab === "rides" && <ProfileRidesTab rides={rides} user={user} />}
+        {activeTab === "bikes" && (
+          <ProfileBikesTab
+            primaryBike={{ make: form.bike_make, model: form.bike_model, year: form.bike_year, class: form.bike_class }}
+            motorcycleModels={form.motorcycle_models}
+            onUpdateModels={(models) => updateField("motorcycle_models", models)}
+            ridePreferences={form.ride_preferences}
+            onToggleVibe={(vibe) =>
+              setForm((f) => ({
+                ...f,
+                ride_preferences: f.ride_preferences.includes(vibe)
+                  ? f.ride_preferences.filter((v) => v !== vibe)
+                  : [...f.ride_preferences, vibe],
+              }))
+            }
+          />
+        )}
+        {activeTab === "reviews" && <ProfileReviewsTab reviews={reviews} avgRating={avgRating} />}
       </div>
     </div>
   );
