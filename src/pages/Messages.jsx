@@ -278,6 +278,7 @@ export default function Messages() {
             </div>
           </motion.div>
         ) : (
+          <motion.div
             key="list"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
