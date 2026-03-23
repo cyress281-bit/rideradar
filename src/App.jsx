@@ -13,6 +13,7 @@ import LiveGrid from './pages/LiveGrid';
 
 import CreateRide from './pages/CreateRide';
 import Profile from './pages/Profile';
+import Messages from './pages/Messages';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +46,7 @@ const AuthenticatedApp = () => {
 
 
         <Route path="/create-ride" element={<CreateRide />} />
+        <Route path="/messages" element={<Messages />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
