@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, AlertTriangle, Navigation, MapPin, MessageSquare } from "lucide-react";
+import { Send, AlertTriangle, Navigation, MapPin, MessageSquare, ImagePlus, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
@@ -29,7 +29,9 @@ export default function RideChat({ rideId, user, canChat }) {
   const [text, setText] = useState("");
   const [tag, setTag] = useState("chat");
   const [sending, setSending] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const bottomRef = useRef(null);
+  const photoInputRef = useRef(null);
 
   const { data: messages = [] } = useQuery({
     queryKey: ["ride-chat", rideId],
@@ -53,20 +55,33 @@ export default function RideChat({ rideId, user, canChat }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  const sendMessage = async () => {
-    if (!text.trim() || !user || sending) return;
+  const sendMessage = async (overrides = {}) => {
+    const msgText = overrides.text ?? text.trim();
+    if (!msgText && !overrides.photo_url) return;
+    if (!user || sending) return;
     setSending(true);
     const username = user.username || user.email?.split("@")[0] || "rider";
     await base44.entities.RideMessage.create({
       ride_id: rideId,
       user_email: user.email,
       username,
-      text: text.trim(),
-      tag,
+      text: msgText,
+      tag: overrides.tag ?? tag,
+      photo_url: overrides.photo_url ?? undefined,
     });
-    setText("");
+    if (!overrides.photo_url) setText("");
     setSending(false);
     queryClient.invalidateQueries({ queryKey: ["ride-chat", rideId] });
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingPhoto(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await sendMessage({ text: "📷 Photo", photo_url: file_url, tag: "chat" });
+    setUploadingPhoto(false);
+    e.target.value = "";
   };
 
   const handleKeyDown = (e) => {
@@ -113,6 +128,11 @@ export default function RideChat({ rideId, user, canChat }) {
                     </div>
                   )}
                   <p className="text-sm leading-snug">{msg.text}</p>
+                  {msg.photo_url && (
+                    <a href={msg.photo_url} target="_blank" rel="noopener noreferrer" className="block mt-1.5">
+                      <img src={msg.photo_url} alt="photo" className="rounded-xl max-w-full max-h-48 object-cover" />
+                    </a>
+                  )}
                 </div>
                 <span className="text-[9px] text-muted-foreground mt-0.5 mx-1">
                   {formatDistanceToNow(new Date(msg.created_date), { addSuffix: true })}
@@ -148,6 +168,14 @@ export default function RideChat({ rideId, user, canChat }) {
             })}
           </div>
           <div className="flex gap-2">
+            <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+            <button
+              onClick={() => photoInputRef.current?.click()}
+              disabled={uploadingPhoto}
+              className="h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-secondary border border-border hover:bg-secondary/80 transition-colors"
+            >
+              {uploadingPhoto ? <Loader className="w-3.5 h-3.5 animate-spin text-muted-foreground" /> : <ImagePlus className="w-3.5 h-3.5 text-muted-foreground" />}
+            </button>
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -162,7 +190,7 @@ export default function RideChat({ rideId, user, canChat }) {
               maxLength={280}
             />
             <Button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!text.trim() || sending}
               size="icon"
               className="h-9 w-9 bg-primary hover:bg-primary/90 flex-shrink-0"
