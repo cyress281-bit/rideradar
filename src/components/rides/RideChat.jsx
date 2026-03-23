@@ -39,7 +39,7 @@ export default function RideChat({ rideId, user, canChat }) {
     queryKey: ["ride-chat", rideId],
     queryFn: () => base44.entities.RideMessage.filter({ ride_id: rideId }, "created_date", 100),
     enabled: !!rideId,
-    refetchInterval: 8000,
+    staleTime: 30_000,
   });
 
   // Real-time subscription
