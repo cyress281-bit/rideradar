@@ -6,7 +6,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Radio, Layers, RefreshCw } from "lucide-react";
 import MeetupPin from "@/components/map/MeetupPin";
 import ActiveRiderDot from "@/components/map/ActiveRiderDot";
+import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
+import RideRoutePolyline from "@/components/map/RideRoutePolyline";
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
@@ -40,8 +42,11 @@ export default function LiveGrid() {
   const [selectedRide, setSelectedRide] = useState(null);
   const [myPosition, setMyPosition] = useState(null);
   const [checkedInRides, setCheckedInRides] = useState(new Set());
+  const [showOtherRiders, setShowOtherRiders] = useState(true);
   const locationRecordIds = useRef({}); // ride_id -> riderLocation record id
   const watchIdRef = useRef(null);
+  const lastTrackPointTime = useRef({}); // ride_id -> timestamp of last recorded track point
+  const TRACK_INTERVAL_MS = 15000; // record a track point every 15 seconds
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -69,6 +74,21 @@ export default function LiveGrid() {
     refetchInterval: 10000,
   });
 
+  // Fetch track points for active rides
+  const activeRideIds = rides.filter((r) => r.status === "active").map((r) => r.id);
+  const { data: trackPoints = [] } = useQuery({
+    queryKey: ["track-points", activeRideIds.join(",")],
+    queryFn: async () => {
+      if (activeRideIds.length === 0) return [];
+      const results = await Promise.all(
+        activeRideIds.map((id) => base44.entities.RideTrackPoint.filter({ ride_id: id }, "created_date", 500))
+      );
+      return results.flat();
+    },
+    enabled: activeRideIds.length > 0,
+    refetchInterval: 10000,
+  });
+
   // Fetch all rider locations for active/meetup rides
   const { data: riderLocations = [] } = useQuery({
     queryKey: ["rider-locations", rideIds.join(",")],
@@ -91,6 +111,14 @@ export default function LiveGrid() {
     return unsub;
   }, [queryClient]);
 
+  // Real-time subscription to track points
+  useEffect(() => {
+    const unsub = base44.entities.RideTrackPoint.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["track-points"] });
+    });
+    return unsub;
+  }, [queryClient]);
+
   // Real-time subscription to Ride changes
   useEffect(() => {
     const unsub = base44.entities.Ride.subscribe(() => {
@@ -98,17 +126,6 @@ export default function LiveGrid() {
     });
     return unsub;
   }, [queryClient]);
-
-  // Stable refs to avoid GPS watch restart on every poll cycle
-  const ridesRef = useRef([]);
-  const allParticipantsRef = useRef([]);
-  const riderLocationsRef = useRef([]);
-  const checkedInRidesRef = useRef(new Set());
-
-  useEffect(() => { ridesRef.current = rides; }, [rides]);
-  useEffect(() => { allParticipantsRef.current = allParticipants; }, [allParticipants]);
-  useEffect(() => { riderLocationsRef.current = riderLocations; }, [riderLocations]);
-  useEffect(() => { checkedInRidesRef.current = checkedInRides; }, [checkedInRides]);
 
   // Update or create location record for user in a ride
   const upsertLocation = useCallback(async (ride, lat, lng, checkedIn) => {
@@ -133,16 +150,11 @@ export default function LiveGrid() {
   }, [user]);
 
   // Auto check-in: if within radius of meetup, mark checked in
-  // Uses stable refs to avoid restarting GPS watchPosition on every poll cycle
   const handlePositionUpdate = useCallback(async (lat, lng) => {
     setMyPosition({ lat, lng });
     if (!user) return;
 
-    const rides = ridesRef.current;
-    const allParticipants = allParticipantsRef.current;
-    const riderLocations = riderLocationsRef.current;
-    const checkedInRides = checkedInRidesRef.current;
-
+    // Only act on rides user is approved for
     const myApprovedRideIds = allParticipants
       .filter((p) => p.user_email === user.email && p.status === "approved")
       .map((p) => p.ride_id);
@@ -156,6 +168,7 @@ export default function LiveGrid() {
         if (dist <= CHECK_IN_RADIUS_METERS && !alreadyCheckedIn) {
           setCheckedInRides((prev) => new Set([...prev, ride.id]));
           await upsertLocation(ride, lat, lng, true);
+          // Update ride rider_count
           const checkedInCount = riderLocations.filter((l) => l.ride_id === ride.id && l.checked_in).length + 1;
           await base44.entities.Ride.update(ride.id, {
             rider_count: checkedInCount,
@@ -167,10 +180,25 @@ export default function LiveGrid() {
           await upsertLocation(ride, lat, lng, true);
         }
       } else if (ride.status === "active") {
+        // Update position for live tracking
         await upsertLocation(ride, lat, lng, true);
+        // Record track point every TRACK_INTERVAL_MS
+        const now = Date.now();
+        const lastTime = lastTrackPointTime.current[ride.id] || 0;
+        if (now - lastTime >= TRACK_INTERVAL_MS) {
+          lastTrackPointTime.current[ride.id] = now;
+          await base44.entities.RideTrackPoint.create({
+            ride_id: ride.id,
+            user_email: user.email,
+            lat,
+            lng,
+            recorded_at: new Date().toISOString(),
+          });
+          queryClient.invalidateQueries({ queryKey: ["track-points"] });
+        }
       }
     }
-  }, [user, upsertLocation, queryClient]); // stable deps only — reads live data via refs
+  }, [user, rides, allParticipants, checkedInRides, riderLocations, upsertLocation, queryClient]);
 
   // Start GPS watch
   useEffect(() => {
@@ -210,8 +238,26 @@ export default function LiveGrid() {
           />
         ))}
 
+        {/* Active ride route polylines */}
+        {activeRides.map((ride) => (
+          <RideRoutePolyline
+            key={`route-${ride.id}`}
+            trackPoints={trackPoints.filter((tp) => tp.ride_id === ride.id)}
+            rideStatus={ride.status}
+          />
+        ))}
+
+        {/* Active ride pins (tappable) */}
+        {activeRides.map((ride) => (
+          <ActiveRidePin
+            key={`pin-${ride.id}`}
+            ride={ride}
+            onClick={() => setSelectedRide(ride)}
+          />
+        ))}
+
         {/* Active ride: show live rider dots */}
-        {activeRides.map((ride) =>
+        {showOtherRiders && activeRides.map((ride) =>
           riderLocations
             .filter((l) => l.ride_id === ride.id && l.is_active)
             .map((loc) => (
@@ -244,7 +290,7 @@ export default function LiveGrid() {
           </div>
         </div>
 
-        {/* Right: Stats */}
+        {/* Right: Stats & Toggle */}
         <div className="flex flex-col gap-1.5 items-end pointer-events-auto">
           <div className="bg-card/90 backdrop-blur-xl rounded-xl px-3 py-2 border border-border flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -254,8 +300,20 @@ export default function LiveGrid() {
             <span className="text-xs font-semibold text-foreground">{rides.length} on radar</span>
           </div>
           {activeRides.length > 0 && (
-            <div className="bg-primary/10 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-primary/30">
-              <span className="text-[10px] font-bold text-primary">{activeRides.length} LIVE</span>
+            <div className="flex gap-2">
+              <div className="bg-primary/10 backdrop-blur-xl rounded-xl px-3 py-1.5 border border-primary/30">
+                <span className="text-[10px] font-bold text-primary">{activeRides.length} LIVE</span>
+              </div>
+              <button
+                onClick={() => setShowOtherRiders(!showOtherRiders)}
+                className={`backdrop-blur-xl rounded-xl px-3 py-1.5 border transition-all text-[10px] font-bold ${
+                  showOtherRiders
+                    ? "bg-green-500/10 border-green-500/30 text-green-400"
+                    : "bg-card/90 border-border text-muted-foreground"
+                }`}
+              >
+                {showOtherRiders ? "👁️ Tracking" : "👁️ Hidden"}
+              </button>
             </div>
           )}
         </div>
@@ -277,6 +335,7 @@ export default function LiveGrid() {
             ride={selectedRide}
             participants={allParticipants.filter((p) => p.ride_id === selectedRide.id)}
             riderLocations={riderLocations}
+            user={user}
             onClose={() => setSelectedRide(null)}
           />
         )}

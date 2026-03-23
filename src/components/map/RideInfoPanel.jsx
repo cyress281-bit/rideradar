@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { X, Clock, Users, Bike, MapPin, CheckCircle, Navigation } from "lucide-react";
+import { X, Clock, Users, Bike, MapPin, CheckCircle, UserPlus, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { formatDistanceToNow, format } from "date-fns";
+import { base44 } from "@/api/base44Client";
+import { formatDistanceToNow } from "date-fns";
 
 const vibeColors = {
   chill: "bg-blue-500/15 text-blue-400 border-blue-500/20",
@@ -15,11 +15,41 @@ const vibeColors = {
   commute: "bg-gray-500/15 text-gray-400 border-gray-500/20",
 };
 
-export default function RideInfoPanel({ ride, participants, riderLocations, onClose }) {
+export default function RideInfoPanel({ ride, participants, riderLocations, user, onClose }) {
+  const [joined, setJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [isHost, setIsHost] = useState(false);
+
   const approved = participants.filter((p) => p.status === "approved");
   const checkedIn = riderLocations.filter((l) => l.checked_in && l.ride_id === ride.id);
   const startTime = new Date(ride.start_time);
   const minsUntil = Math.round((startTime - Date.now()) / 60000);
+  const timeLabel = formatDistanceToNow(startTime, { addSuffix: true });
+
+  useEffect(() => {
+    if (!user) return;
+    setIsHost(ride.host_email === user.email);
+    base44.entities.RideParticipant.filter({ ride_id: ride.id, user_email: user.email })
+      .then((p) => { if (p.length > 0) setJoined(true); })
+      .catch(() => {});
+  }, [user, ride.id, ride.host_email]);
+
+  const handleJoin = async (e) => {
+    e.preventDefault();
+    if (!user || joining || joined || isHost) return;
+    setJoining(true);
+    const username = user.username || user.email?.split("@")[0] || "rider";
+    await base44.entities.RideParticipant.create({
+      ride_id: ride.id,
+      user_email: user.email,
+      username,
+      status: "approved",
+      role: "rider",
+    });
+    await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
+    setJoined(true);
+    setJoining(false);
+  };
 
   return (
     <motion.div
@@ -29,7 +59,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, onCl
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
       className="absolute bottom-20 left-3 right-3 z-[1000] bg-card/97 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl overflow-hidden"
     >
-      {/* Top accent line */}
+      {/* Top accent */}
       <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
 
       <div className="p-4">
@@ -52,17 +82,17 @@ export default function RideInfoPanel({ ride, participants, riderLocations, onCl
           )}
           <h3 className="font-bold text-base leading-tight">{ride.title}</h3>
         </div>
-        <p className="text-xs text-muted-foreground mb-3">by @{ride.host_username}</p>
+        <p className="text-xs text-muted-foreground mb-3">by @{ride.host_username} · {timeLabel}</p>
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="bg-secondary/50 rounded-xl p-2.5 text-center">
             <p className="text-base font-bold text-primary">{checkedIn.length}</p>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Checked In</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">At Meetup</p>
           </div>
           <div className="bg-secondary/50 rounded-xl p-2.5 text-center">
             <p className="text-base font-bold">{approved.length}</p>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Approved</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Riders</p>
           </div>
           <div className="bg-secondary/50 rounded-xl p-2.5 text-center">
             <p className={`text-base font-bold ${minsUntil <= 10 && ride.status === "meetup" ? "text-amber-400" : ""}`}>
@@ -88,43 +118,49 @@ export default function RideInfoPanel({ ride, participants, riderLocations, onCl
           )}
           {ride.duration_minutes && (
             <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-secondary/60 text-muted-foreground border-border">
-              <Clock className="w-3 h-3 mr-1" />{ride.duration_minutes}m ride
+              <Clock className="w-3 h-3 mr-1" />{ride.duration_minutes}m
             </Badge>
           )}
         </div>
-
-        {/* Checked-in riders */}
-        {checkedIn.length > 0 && (
-          <div className="mb-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
-              <CheckCircle className="w-3 h-3 text-primary" /> At Meetup
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {checkedIn.map((l) => (
-                <span key={l.id} className="text-[10px] bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 font-medium">
-                  @{l.username}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {ride.status_message && (
           <p className="text-xs text-primary/80 italic mb-3">"{ride.status_message}"</p>
         )}
 
-        {ride.requirements && (
-          <p className="text-[11px] text-muted-foreground mb-3">
-            <span className="font-semibold text-foreground/60">Req: </span>{ride.requirements}
-          </p>
-        )}
+        {/* Action buttons */}
+        <div className="flex gap-2">
+          {/* Quick join */}
+          {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
+            <button
+              onClick={handleJoin}
+              disabled={joining || joined}
+              className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all ${
+                joined
+                  ? "bg-green-500/15 text-green-400 border-green-500/20 flex-1"
+                  : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 flex-1"
+              }`}
+            >
+              {joined ? (
+                <><Check className="w-4 h-4" /> You're In!</>
+              ) : joining ? (
+                "Joining..."
+              ) : (
+                <><UserPlus className="w-4 h-4" /> Quick Join</>
+              )}
+            </button>
+          )}
 
-        <Link to={`/rides/${ride.id}`}>
-          <Button className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl">
-            <Navigation className="w-4 h-4 mr-1.5" />
-            {ride.status === "active" ? "Join Live Ride" : "View & Join Ride"}
-          </Button>
-        </Link>
+          {/* View details */}
+          <Link
+            to={`/rides/${ride.id}`}
+            className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors ${
+              isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
+            }`}
+          >
+            <ArrowRight className="w-4 h-4" />
+            {isHost ? "Manage Ride" : "Details"}
+          </Link>
+        </div>
       </div>
     </motion.div>
   );

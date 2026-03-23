@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, MapPin, Clock, Users, Bike, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const pinIcon = L.divIcon({
@@ -35,13 +35,12 @@ export default function CreateRide() {
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [position, setPosition] = useState(null);
+  const [rideMode, setRideMode] = useState("now"); // "now" | "schedule"
   const [form, setForm] = useState({
     title: "",
     start_time: "",
     duration_minutes: "60",
     vibe: "",
-    bike_class: "any",
-    max_riders: "",
     requirements: "",
     meetup_address: "",
   });
@@ -56,13 +55,18 @@ export default function CreateRide() {
       toast({ title: "Tap the map to set your meetup point", variant: "destructive" });
       return;
     }
-    if (!form.title || !form.start_time) {
-      toast({ title: "Please fill in the ride name and start time", variant: "destructive" });
+    if (!form.title) {
+      toast({ title: "Please fill in the ride name", variant: "destructive" });
+      return;
+    }
+    if (rideMode === "schedule" && !form.start_time) {
+      toast({ title: "Please set a start time", variant: "destructive" });
       return;
     }
 
     setSubmitting(true);
     const username = user?.username || user?.email?.split("@")[0] || "rider";
+    const startTime = rideMode === "now" ? new Date().toISOString() : new Date(form.start_time).toISOString();
 
     const ride = await base44.entities.Ride.create({
       title: form.title,
@@ -71,15 +75,27 @@ export default function CreateRide() {
       meetup_lat: position[0],
       meetup_lng: position[1],
       meetup_address: form.meetup_address,
-      start_time: new Date(form.start_time).toISOString(),
+      start_time: startTime,
       duration_minutes: parseInt(form.duration_minutes),
       vibe: form.vibe || undefined,
-      bike_class: form.bike_class,
-      max_riders: form.max_riders ? parseInt(form.max_riders) : undefined,
       requirements: form.requirements || undefined,
       status: "meetup",
       rider_count: 1,
     });
+
+    // If "Ride Now" — broadcast a notification to nearby riders
+    if (rideMode === "now") {
+      await base44.entities.RideNotification.create({
+        ride_id: ride.id,
+        ride_title: form.title,
+        host_username: username,
+        meetup_lat: position[0],
+        meetup_lng: position[1],
+        message: `Ride starting nearby — Join?`,
+        recipient_email: "",
+        read: false,
+      });
+    }
 
     await base44.entities.RideParticipant.create({
       ride_id: ride.id,
@@ -144,7 +160,43 @@ export default function CreateRide() {
           />
         </div>
 
+        {/* Ride Now / Schedule toggle */}
+        <div className="flex rounded-xl overflow-hidden border border-border bg-secondary/40 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setRideMode("now")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              rideMode === "now"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Zap className="w-4 h-4" /> Ride Now
+          </button>
+          <button
+            type="button"
+            onClick={() => setRideMode("schedule")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+              rideMode === "schedule"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <CalendarClock className="w-4 h-4" /> Schedule Later
+          </button>
+        </div>
+
+        {rideMode === "now" && (
+          <div className="flex items-start gap-2.5 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2.5">
+            <Zap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-primary/90 leading-snug">
+              Nearby riders will get an instant notification: <span className="font-semibold">"Ride starting nearby — Join?"</span>
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
+          {rideMode === "schedule" && (
           <div>
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> Start Time
@@ -156,7 +208,8 @@ export default function CreateRide() {
               className="bg-secondary border-border"
             />
           </div>
-          <div>
+          )}
+          <div className={rideMode === "now" ? "col-span-2" : ""}>
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> Duration
             </Label>
@@ -174,62 +227,27 @@ export default function CreateRide() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" /> Vibe
-            </Label>
-            <Select value={form.vibe} onValueChange={(v) => updateField("vibe", v)}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Select vibe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="chill">Chill</SelectItem>
-                <SelectItem value="fast">Fast</SelectItem>
-                <SelectItem value="night_ride">Night Ride</SelectItem>
-                <SelectItem value="scenic">Scenic</SelectItem>
-                <SelectItem value="adventure">Adventure</SelectItem>
-                <SelectItem value="commute">Commute</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Bike className="w-3.5 h-3.5" /> Bike Class
-            </Label>
-            <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any</SelectItem>
-                <SelectItem value="sportbike">Sportbike</SelectItem>
-                <SelectItem value="cruiser">Cruiser</SelectItem>
-                <SelectItem value="adventure">Adventure</SelectItem>
-                <SelectItem value="naked">Naked</SelectItem>
-                <SelectItem value="touring">Touring</SelectItem>
-                <SelectItem value="dual_sport">Dual Sport</SelectItem>
-                <SelectItem value="scooter">Scooter</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
         <div>
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Max Riders (optional)
+            <Sparkles className="w-3.5 h-3.5" /> Vibe
           </Label>
-          <Input
-            type="number"
-            placeholder="No limit"
-            value={form.max_riders}
-            onChange={(e) => updateField("max_riders", e.target.value)}
-            className="bg-secondary border-border"
-          />
+          <Select value={form.vibe} onValueChange={(v) => updateField("vibe", v)}>
+            <SelectTrigger className="bg-secondary border-border">
+              <SelectValue placeholder="Select vibe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chill">Chill</SelectItem>
+              <SelectItem value="fast">Fast</SelectItem>
+              <SelectItem value="night_ride">Night Ride</SelectItem>
+              <SelectItem value="scenic">Scenic</SelectItem>
+              <SelectItem value="adventure">Adventure</SelectItem>
+              <SelectItem value="commute">Commute</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
-          <Label className="text-xs text-muted-foreground mb-2">Requirements (optional)</Label>
+          <Label className="text-xs text-muted-foreground mb-2">Requirements (preferred, optional)</Label>
           <Textarea
             placeholder="e.g. Full gear, Cardo comms, etc."
             value={form.requirements}
@@ -243,7 +261,7 @@ export default function CreateRide() {
           disabled={submitting}
           className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl"
         >
-          {submitting ? "Creating..." : "Create Ride & Go Live"}
+          {submitting ? "Creating..." : rideMode === "now" ? "🚀 Ride Now — Notify Riders" : "📅 Schedule Ride"}
         </Button>
       </form>
     </div>

@@ -9,10 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX
+  Save, LogOut, UserX, Camera, Loader
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
+import MotorcycleModels from "@/components/profile/MotorcycleModels";
+import RideHistory from "@/components/profile/RideHistory";
 
 const vibeOptions = [
   { value: "chill", label: "Chill" },
@@ -29,23 +31,28 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({
     username: "",
+    profile_pic_url: "",
     bike_make: "",
     bike_model: "",
     bike_year: "",
     bike_class: "",
+    motorcycle_models: [],
     ride_preferences: [],
     invisible_mode: false,
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then((u) => {
       setUser(u);
       setForm({
         username: u.username || u.email?.split("@")[0] || "",
+        profile_pic_url: u.profile_pic_url || "",
         bike_make: u.bike_make || "",
         bike_model: u.bike_model || "",
         bike_year: u.bike_year || "",
         bike_class: u.bike_class || "",
+        motorcycle_models: u.motorcycle_models || [],
         ride_preferences: u.ride_preferences || [],
         invisible_mode: u.invisible_mode || false,
       });
@@ -58,14 +65,31 @@ export default function Profile() {
     enabled: !!user?.email,
   });
 
+  const handlePicUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setForm((f) => ({ ...f, profile_pic_url: file_url }));
+      toast({ title: "Photo uploaded!" });
+    } catch (err) {
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       await base44.auth.updateMe({
         username: form.username,
+        profile_pic_url: form.profile_pic_url || undefined,
         bike_make: form.bike_make,
         bike_model: form.bike_model,
         bike_year: form.bike_year ? parseInt(form.bike_year) : undefined,
         bike_class: form.bike_class || undefined,
+        motorcycle_models: form.motorcycle_models,
         ride_preferences: form.ride_preferences,
         invisible_mode: form.invisible_mode,
       });
@@ -94,17 +118,37 @@ export default function Profile() {
       </div>
 
       <div className="px-5 space-y-6">
-        {/* Avatar area */}
+        {/* Avatar area with upload */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-            <span className="text-2xl font-bold text-primary">
-              {form.username?.[0]?.toUpperCase() || "?"}
-            </span>
-          </div>
+          <label className="relative cursor-pointer group">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
+              {form.profile_pic_url ? (
+                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-primary">
+                  {form.username?.[0]?.toUpperCase() || "?"}
+                </span>
+              )}
+            </div>
+            <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploading ? (
+                <Loader className="w-5 h-5 text-white animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5 text-white" />
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePicUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
           <div>
             <p className="font-bold text-base">@{form.username || "anonymous"}</p>
             <div className="flex items-center gap-2 mt-1">
@@ -134,10 +178,10 @@ export default function Profile() {
           />
         </div>
 
-        {/* Bike info */}
+        {/* Primary Bike info */}
         <div>
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Bike className="w-3.5 h-3.5" /> Your Bike
+            <Bike className="w-3.5 h-3.5" /> Primary Bike
           </Label>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
@@ -159,6 +203,12 @@ export default function Profile() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Motorcycle models */}
+        <MotorcycleModels
+          models={form.motorcycle_models}
+          onUpdate={(models) => updateField("motorcycle_models", models)}
+        />
 
         {/* Ride preferences */}
         <div>
@@ -199,6 +249,14 @@ export default function Profile() {
               onCheckedChange={(v) => updateField("invisible_mode", v)}
             />
           </div>
+        </div>
+
+        {/* Ride History */}
+        <div>
+          <Label className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Route className="w-3.5 h-3.5" /> Ride History
+          </Label>
+          {user && <RideHistory userEmail={user.email} />}
         </div>
 
         {/* Blocked users */}
