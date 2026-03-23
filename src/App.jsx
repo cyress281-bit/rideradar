@@ -9,7 +9,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
 import LiveGrid from './pages/LiveGrid';
-
+import RideDetail from './pages/RideDetail';
 
 import CreateRide from './pages/CreateRide';
 import Profile from './pages/Profile';
@@ -43,8 +43,7 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/grid" element={<LiveGrid />} />
-
-
+        <Route path="/ride/:rideId" element={<RideDetail />} />
         <Route path="/create-ride" element={<CreateRide />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/profile" element={<Profile />} />
