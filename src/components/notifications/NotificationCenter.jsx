@@ -175,7 +175,7 @@ export default function NotificationCenter({ user }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-11 w-96 max-h-[600px] bg-card border border-border rounded-2xl shadow-2xl z-[2000] overflow-hidden flex flex-col"
+            className="absolute right-2 top-11 w-80 max-h-[600px] bg-card border border-border rounded-2xl shadow-2xl z-[2000] overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
@@ -185,7 +185,7 @@ export default function NotificationCenter({ user }) {
                   onClick={() => {
                     notifications.forEach((n) => handleMarkRead(n));
                   }}
-                  className="text-[10px] text-primary hover:underline"
+                  className="text-[10px] text-primary hover:underline whitespace-nowrap"
                 >
                   Mark all read
                 </button>
