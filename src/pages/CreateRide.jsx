@@ -87,6 +87,7 @@ export default function CreateRide() {
       duration_minutes: parseInt(form.duration_minutes),
       vibe: form.vibe || undefined,
       requirements: form.requirements || undefined,
+      registration_fee: rideType === "planned_event" && form.registration_fee ? parseFloat(form.registration_fee) : undefined,
       status: "meetup",
       rider_count: 1,
     });
