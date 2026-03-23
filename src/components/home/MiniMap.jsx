@@ -70,7 +70,7 @@ export default function MiniMap({ rides }) {
         </ViewportLazyMount>
         <Link
           to="/grid"
-          className="absolute top-3 right-3 z-[1000] bg-card/90 backdrop-blur-sm p-2 rounded-lg border border-border hover:bg-card transition-colors"
+          className="absolute top-3 right-3 z-[1000] bg-card/90 backdrop-blur-sm p-2 rounded-lg border border-border hover:bg-card transition-colors !min-h-0 !min-w-0 w-8 h-8 flex items-center justify-center"
           aria-label="Open the full live map"
         >
           <Expand className="w-4 h-4 text-foreground" />
