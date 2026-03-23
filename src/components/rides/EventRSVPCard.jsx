@@ -129,17 +129,37 @@ export default function EventRSVPCard({ event, user, myStatus, onStatusChange })
         )}
       </div>
 
+      {/* Fee badge */}
+      {hasFee && (
+        <div className="flex items-center gap-1.5 text-[10px] text-amber-400">
+          <CreditCard className="w-3 h-3" aria-hidden="true" />
+          Registration fee: <span className="font-bold">${event.registration_fee.toFixed(2)}</span>
+        </div>
+      )}
+
       {/* RSVP Actions */}
       {!optimisticStatus ? (
         <div className="flex gap-2 pt-2">
-          <Button
-            onClick={() => handleRSVP("approved")}
-            disabled={rsvpMutation.isPending}
-            className="flex-1 h-8 bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-semibold border border-green-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            variant="outline"
-          >
-            <Check className="w-3 h-3 mr-1" aria-hidden="true" /> Going
-          </Button>
+          {hasFee ? (
+            <Button
+              onClick={handlePaidRSVP}
+              disabled={checkoutLoading}
+              className="flex-1 h-8 bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 text-xs font-semibold border border-amber-500/30"
+              variant="outline"
+            >
+              <CreditCard className="w-3 h-3 mr-1" aria-hidden="true" />
+              {checkoutLoading ? "Redirecting..." : `Pay & Register`}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleRSVP("approved")}
+              disabled={rsvpMutation.isPending}
+              className="flex-1 h-8 bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-semibold border border-green-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              variant="outline"
+            >
+              <Check className="w-3 h-3 mr-1" aria-hidden="true" /> Going
+            </Button>
+          )}
           <Button
             onClick={() => handleRSVP("declined")}
             disabled={rsvpMutation.isPending}
