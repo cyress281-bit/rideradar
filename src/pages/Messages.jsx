@@ -40,7 +40,7 @@ export default function Messages() {
       );
     },
     enabled: !!user?.email,
-    refetchInterval: 5000,
+    staleTime: 30_000,
   });
 
   // Fetch ride messages
@@ -69,7 +69,7 @@ export default function Messages() {
       return results.flat();
     },
     enabled: userRideIds.length > 0,
-    refetchInterval: 5000,
+    staleTime: 30_000,
   });
 
   // Real-time subscriptions
