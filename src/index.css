@@ -158,6 +158,13 @@
   }
 }
 
+/* Aggressive image lazy-loading defaults */
+img {
+  loading: lazy;
+  decoding: async;
+  content-visibility: auto;
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 4px;
