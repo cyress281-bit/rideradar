@@ -6,7 +6,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import HomeHeader from "../components/home/HomeHeader";
 import StatsBar from "../components/home/StatsBar";
 import MiniMap from "../components/home/MiniMap";
-import RidePreviewCard from "../components/rides/RidePreviewCard";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import VirtualizedRideList from "../components/rides/VirtualizedRideList";
 import EventCalendar from "../components/rides/EventCalendar";
