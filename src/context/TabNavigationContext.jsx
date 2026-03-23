@@ -7,7 +7,6 @@ const TabNavigationContext = createContext();
 const TAB_ROOT_PATHS = {
   home: "/",
   grid: "/grid",
-  rides: "/rides",
   messages: "/messages",
   profile: "/profile",
 };
@@ -21,7 +20,6 @@ export function TabNavigationProvider({ children }) {
   const stacksRef = useRef({
     home: ["/"],
     grid: ["/grid"],
-    rides: ["/rides"],
     messages: ["/messages"],
     profile: ["/profile"],
   });
@@ -29,7 +27,6 @@ export function TabNavigationProvider({ children }) {
   const scrollPositionsRef = useRef({
     home: 0,
     grid: 0,
-    rides: 0,
     messages: 0,
     profile: 0,
   });
@@ -40,10 +37,10 @@ export function TabNavigationProvider({ children }) {
   const getTabFromPath = useCallback((path) => {
     if (path === "/") return "home";
     if (path.startsWith("/grid")) return "grid";
-    if (path.startsWith("/rides")) return "rides";
+    if (path.startsWith("/rides")) return "home";
     if (path.startsWith("/messages")) return "messages";
     if (path.startsWith("/profile")) return "profile";
-    if (path.startsWith("/create-ride")) return "rides";
+    if (path.startsWith("/create-ride")) return "home";
     return null;
   }, []);
 
