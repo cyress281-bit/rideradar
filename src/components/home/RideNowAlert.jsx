@@ -35,6 +35,11 @@ export default function RideNowAlert({ user }) {
       if (event.type !== "create") return;
       const notif = event.data;
       if (!notif || notif.read) return;
+
+      // Only show broadcast notifications (empty recipient) or ones addressed to this user
+      const isForMe = !notif.recipient_email || notif.recipient_email === user?.email;
+      if (!isForMe) return;
+
       // Skip if this user is the host
       if (user && notif.host_username === (user.username || user.email?.split("@")[0])) return;
 
