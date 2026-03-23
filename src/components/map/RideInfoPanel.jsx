@@ -203,6 +203,17 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
         </div>
       </div>
       )}
-    </motion.div>
-  );
-}
+
+      {/* Rider profile modal */}
+      <AnimatePresence>
+        {selectedRider && (
+          <RiderProfileModal
+            riderEmail={selectedRider.email}
+            username={selectedRider.username}
+            onClose={() => setSelectedRider(null)}
+          />
+        )}
+      </AnimatePresence>
+      </motion.div>
+      );
+      }
