@@ -22,12 +22,7 @@ export default function HomeHeader({ username }) {
           <p className="text-[11px] text-muted-foreground -mt-0.5">Group rides near you</p>
         </div>
       </div>
-      <Link
-        to="/profile"
-        className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-      >
-        <User className="w-4 h-4 text-foreground" />
-      </Link>
+
     </div>
   );
 }
