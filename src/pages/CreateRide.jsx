@@ -98,6 +98,7 @@ export default function CreateRide() {
         ride_id: ride.id,
         ride_title: form.title,
         host_username: username,
+        host_email: user?.email,
         meetup_lat: position[0],
         meetup_lng: position[1],
         message: `Ride starting nearby — Join?`,
