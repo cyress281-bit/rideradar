@@ -19,21 +19,21 @@ export default function NotificationBell({ user }) {
       );
     },
     enabled: !!user?.email,
-    refetchInterval: 5000,
+    staleTime: 30_000,
   });
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Real-time subscription
+  // Real-time subscription — replaces polling
   useEffect(() => {
     if (!user?.email) return;
     const unsub = base44.entities.RideNotification.subscribe((event) => {
-      if (event.data?.recipient_email === user.email) {
-        // Refresh notifications
+      if (!event.data || event.data.recipient_email === user.email) {
+        queryClient.invalidateQueries({ queryKey: ["user-notifications"] });
       }
     });
     return unsub;
-  }, [user?.email]);
+  }, [user?.email, queryClient]);
 
   return (
     <div className="relative">
