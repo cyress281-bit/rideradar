@@ -140,7 +140,7 @@ export default function Profile() {
           <label className="relative cursor-pointer group">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
               {form.profile_pic_url ? (
-                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" />
+                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : (
                 <span className="text-2xl font-bold text-primary">
                   {form.username?.[0]?.toUpperCase() || "?"}
