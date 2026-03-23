@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NotificationPanel from "./NotificationPanel";
 
 export default function NotificationBell({ user }) {
   const [showPanel, setShowPanel] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["user-notifications", user?.email],
