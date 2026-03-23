@@ -35,11 +35,33 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [countdown, setCountdown] = useState("");
 
   const startTime = new Date(ride.start_time);
-  const timeLabel = formatDistanceToNow(startTime, { addSuffix: true });
   const accentClass = vibeAccent[ride.vibe] || "text-muted-foreground";
   const emoji = vibeEmoji[ride.vibe] || "🏍️";
+
+  useEffect(() => {
+    if (ride.status !== "meetup" && ride.status !== "active") return;
+    
+    const updateCountdown = () => {
+      const now = Date.now();
+      const diff = startTime.getTime() - now;
+      
+      if (diff <= 0) {
+        setCountdown("Live");
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdown(`${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`);
+      }
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [ride.status, startTime]);
 
   useEffect(() => {
     if (!user) return;
@@ -100,9 +122,13 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 text-[10px]">
-          <div className="bg-secondary/40 rounded-lg p-2 text-center">
-            <p className="font-bold text-primary">{timeLabel}</p>
-            <p className="text-muted-foreground">Time</p>
+          <div className={`rounded-lg p-2 text-center ${
+            ride.status === "active"
+              ? "bg-green-500/15 text-green-400 border border-green-500/20"
+              : "bg-secondary/40"
+          }`}>
+            <p className="font-bold">{ride.status === "active" ? "Active" : countdown || "Loading..."}</p>
+            <p className="text-muted-foreground">{ride.status === "active" ? "Status" : "Countdown"}</p>
           </div>
           <div className="bg-secondary/40 rounded-lg p-2 text-center">
             <p className="font-bold">{ride.duration_minutes}m</p>
