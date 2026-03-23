@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { User, Zap } from "lucide-react";
+import { User, Bell } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function HomeHeader({ username, user }) {
@@ -26,6 +26,9 @@ export default function HomeHeader({ username, user }) {
       </div>
 
       <div className="flex items-center gap-2">
+        <button className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
+          <Bell className="w-4.5 h-4.5 text-foreground" />
+        </button>
       </div>
     </div>
   );
