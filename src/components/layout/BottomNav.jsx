@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { id: "home", path: "/", icon: Home, label: "Home" },
   { id: "grid", path: "/grid", icon: Map, label: "Live Radar" },
-  { id: "rides", path: "/rides", icon: Navigation, label: "Rides" },
   { id: "messages", path: "/messages", icon: MessageCircle, label: "Messages", badge: "unreadCount" },
   { id: "profile", path: "/profile", icon: User, label: "Profile" },
 ];
