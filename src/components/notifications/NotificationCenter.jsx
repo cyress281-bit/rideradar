@@ -93,7 +93,7 @@ export default function NotificationCenter({ user }) {
 
     // Unread DMs
     latestDMs.forEach((dm) => {
-      const sender = dm.sender_email === user.email ? dm.recipient_email : dm.sender_email;
+      const sender = dm.sender_email === user?.email ? dm.recipient_email : dm.sender_email;
       notifs.push({
         id: `dm-${dm.id}`,
         type: "message",
@@ -119,7 +119,7 @@ export default function NotificationCenter({ user }) {
     });
 
     setNotifications(notifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
-  }, [friendRequests, latestDMs, rideNotifications, user?.email]);
+  }, [friendRequests, latestDMs, rideNotifications]);
 
   const handleAcceptFriend = async (fr) => {
     await base44.entities.UserFriend.update(fr.id, { status: "accepted" });
