@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
-import { useTabNavigation } from "@/context/TabNavigationContext";
-import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
-import { X, Clock, Users, Bike, MapPin, CheckCircle, UserPlus, Check, ArrowRight } from "lucide-react";
+import { X, Clock, Users, Bike, MapPin, CheckCircle, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { base44 } from "@/api/base44Client";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow, format } from "date-fns";
 
 const vibeColors = {
   chill: "bg-blue-500/15 text-blue-400 border-blue-500/20",
@@ -18,55 +15,11 @@ const vibeColors = {
   commute: "bg-gray-500/15 text-gray-400 border-gray-500/20",
 };
 
-export default function RideInfoPanel({ ride, participants, riderLocations, user, onClose }) {
-   const [joined, setJoined] = useState(false);
-   const [isHost, setIsHost] = useState(false);
-   const queryClient = useQueryClient();
-   const navigate = useNavigate();
-
+export default function RideInfoPanel({ ride, participants, riderLocations, onClose }) {
   const approved = participants.filter((p) => p.status === "approved");
   const checkedIn = riderLocations.filter((l) => l.checked_in && l.ride_id === ride.id);
   const startTime = new Date(ride.start_time);
   const minsUntil = Math.round((startTime - Date.now()) / 60000);
-  const timeLabel = formatDistanceToNow(startTime, { addSuffix: true });
-
-  useEffect(() => {
-    if (!user) return;
-    setIsHost(ride.host_email === user.email);
-    base44.entities.RideParticipant.filter({ ride_id: ride.id, user_email: user.email })
-      .then((p) => { if (p.length > 0) setJoined(true); })
-      .catch(() => {});
-  }, [user, ride.id, ride.host_email]);
-
-  const joinMutation = useMutationWithOptimism(
-    async () => {
-      if (!user) return;
-      const username = user.username || user.email?.split("@")[0] || "rider";
-      await base44.entities.RideParticipant.create({
-        ride_id: ride.id,
-        user_email: user.email,
-        username,
-        status: "approved",
-        role: "rider",
-      });
-      await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
-    },
-    {
-      onMutate: () => {
-        setJoined(true);
-      },
-      onError: () => {
-        setJoined(false);
-      },
-      successMessage: "You joined the ride!",
-    }
-  );
-
-  const handleJoin = async (e) => {
-    e.preventDefault();
-    if (!user || joined || isHost) return;
-    joinMutation.mutate();
-  };
 
   return (
     <motion.div
@@ -76,41 +29,40 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
       className="absolute bottom-20 left-3 right-3 z-[1000] bg-card/97 backdrop-blur-2xl rounded-2xl border border-border shadow-2xl overflow-hidden"
     >
-      {/* Top accent */}
-      <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} aria-hidden="true" />
+      {/* Top accent line */}
+      <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
 
       <div className="p-4">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 min-h-[44px] min-w-[44px] rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-          aria-label="Close ride information panel"
+          className="absolute top-4 right-4 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
         >
-          <X className="w-3.5 h-3.5" aria-hidden="true" />
+          <X className="w-3.5 h-3.5" />
         </button>
 
         {/* Status + Title */}
-         <div className="flex items-center gap-2 mb-0.5 pr-8">
-           {ride.status === "active" ? (
-             <span className="relative flex h-2.5 w-2.5 flex-shrink-0" aria-hidden="true">
-               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-             </span>
-           ) : (
-             <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
-           )}
+        <div className="flex items-center gap-2 mb-0.5 pr-8">
+          {ride.status === "active" ? (
+            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+            </span>
+          ) : (
+            <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+          )}
           <h3 className="font-bold text-base leading-tight">{ride.title}</h3>
         </div>
-        <p className="text-xs text-muted-foreground mb-3">by @{ride.host_username} · {timeLabel}</p>
+        <p className="text-xs text-muted-foreground mb-3">by @{ride.host_username}</p>
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="bg-secondary/50 rounded-xl p-2.5 text-center">
             <p className="text-base font-bold text-primary">{checkedIn.length}</p>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">At Meetup</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Checked In</p>
           </div>
           <div className="bg-secondary/50 rounded-xl p-2.5 text-center">
             <p className="text-base font-bold">{approved.length}</p>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Riders</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Approved</p>
           </div>
           <div className="bg-secondary/50 rounded-xl p-2.5 text-center">
             <p className={`text-base font-bold ${minsUntil <= 10 && ride.status === "meetup" ? "text-amber-400" : ""}`}>
@@ -131,57 +83,48 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
           )}
           {ride.bike_class && ride.bike_class !== "any" && (
             <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-secondary/60 text-muted-foreground border-border">
-              <Bike className="w-3 h-3 mr-1" aria-hidden="true" />{ride.bike_class}
+              <Bike className="w-3 h-3 mr-1" />{ride.bike_class}
             </Badge>
           )}
           {ride.duration_minutes && (
             <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-secondary/60 text-muted-foreground border-border">
-              <Clock className="w-3 h-3 mr-1" aria-hidden="true" />{ride.duration_minutes}m
+              <Clock className="w-3 h-3 mr-1" />{ride.duration_minutes}m ride
             </Badge>
           )}
         </div>
+
+        {/* Checked-in riders */}
+        {checkedIn.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3 text-primary" /> At Meetup
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {checkedIn.map((l) => (
+                <span key={l.id} className="text-[10px] bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 font-medium">
+                  @{l.username}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {ride.status_message && (
           <p className="text-xs text-primary/80 italic mb-3">"{ride.status_message}"</p>
         )}
 
-        {/* Action buttons */}
-         <div className="flex gap-2">
-           {/* Quick join */}
-           {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
-             <button
-               onClick={handleJoin}
-               disabled={joinMutation.isPending || joined}
-               className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl border transition-all min-h-[44px] ${
-                 joined
-                   ? "bg-green-500/15 text-green-400 border-green-500/20 flex-1"
-                   : "bg-primary/15 text-primary border-primary/20 hover:bg-primary/25 flex-1"
-               }`}
-               aria-label={joined ? "You have joined this ride" : "Join this ride"}
-               aria-busy={joinMutation.isPending}
-             >
-               {joined ? (
-                 <><Check className="w-4 h-4" aria-hidden="true" /> You're In!</>
-               ) : joinMutation.isPending ? (
-                 "Joining..."
-               ) : (
-                 <><UserPlus className="w-4 h-4" aria-hidden="true" /> Quick Join</>
-               )}
-             </button>
-           )}
+        {ride.requirements && (
+          <p className="text-[11px] text-muted-foreground mb-3">
+            <span className="font-semibold text-foreground/60">Req: </span>{ride.requirements}
+          </p>
+        )}
 
-           {/* View details */}
-             <button
-               onClick={() => navigate(`/rides/${ride.id}`)}
-               className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary border border-border hover:bg-secondary/80 transition-colors min-h-[44px] ${
-                 isHost || ride.status === "completed" ? "flex-1 justify-center" : ""
-               }`}
-               aria-label={`${isHost ? "Manage" : "View details for"} ride: ${ride.title}`}
-             >
-               <ArrowRight className="w-4 h-4" aria-hidden="true" />
-               {isHost ? "Manage Ride" : "Details"}
-             </button>
-         </div>
+        <Link to={`/rides/${ride.id}`}>
+          <Button className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl">
+            <Navigation className="w-4 h-4 mr-1.5" />
+            {ride.status === "active" ? "Join Live Ride" : "View & Join Ride"}
+          </Button>
+        </Link>
       </div>
     </motion.div>
   );

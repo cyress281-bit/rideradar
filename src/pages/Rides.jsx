@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import VirtualizedRideList from "../components/rides/VirtualizedRideList";
-import EventCalendar from "../components/rides/EventCalendar";
-import EventRSVPCard from "../components/rides/EventRSVPCard";
+import RideCard from "../components/rides/RideCard";
+import CreateRideButton from "../components/rides/CreateRideButton";
 
 export default function Rides() {
   const [user, setUser] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: allRides = [], refetch: refetchRides } = useQuery({
+  const { data: allRides = [] } = useQuery({
     queryKey: ["all-rides"],
     queryFn: () => base44.entities.Ride.list("-created_date", 100),
   });
-
-  const { scrollContainerRef, progress, handlers } = usePullToRefresh(() => refetchRides());
 
   const { data: myParticipations = [] } = useQuery({
     queryKey: ["my-participations", user?.email],
@@ -34,42 +28,9 @@ export default function Rides() {
 
   const activeRides = allRides.filter((r) => r.status === "active" || r.status === "meetup");
   const pastRides = allRides.filter((r) => r.status === "completed" || r.status === "cancelled");
-  const plannedEvents = allRides.filter((r) => r.ride_type === "planned_event");
-
-  // Get RSVPs for planned events
-  const { data: allParticipants = [] } = useQuery({
-    queryKey: ["event-participants", plannedEvents.map(e => e.id).join(",")],
-    queryFn: async () => {
-      if (plannedEvents.length === 0) return [];
-      const results = await Promise.all(
-        plannedEvents.map((e) => base44.entities.RideParticipant.filter({ ride_id: e.id }))
-      );
-      return results.flat();
-    },
-    enabled: plannedEvents.length > 0,
-  });
 
   return (
-     <div
-       ref={scrollContainerRef}
-       className="min-h-screen pb-24 relative"
-       style={{ overscrollBehavior: 'none' }}
-       {...handlers}
-     >
-      {/* Pull-to-refresh indicator */}
-      {progress > 0 && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full"
-            style={{
-              rotate: progress * 360,
-              opacity: progress,
-            }}
-          />
-        </div>
-      )}
+    <div className="min-h-screen pb-24">
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-lg font-bold">Rides</h1>
         <p className="text-xs text-muted-foreground">Browse or manage your rides</p>
@@ -80,9 +41,6 @@ export default function Rides() {
           <TabsTrigger value="active" className="flex-1 rounded-lg text-xs data-[state=active]:bg-card">
             Active ({activeRides.length})
           </TabsTrigger>
-          <TabsTrigger value="events" className="flex-1 rounded-lg text-xs data-[state=active]:bg-card">
-            Events ({plannedEvents.length})
-          </TabsTrigger>
           <TabsTrigger value="mine" className="flex-1 rounded-lg text-xs data-[state=active]:bg-card">
             My Rides ({myRides.length})
           </TabsTrigger>
@@ -92,45 +50,38 @@ export default function Rides() {
         </TabsList>
 
         <TabsContent value="active">
-          <VirtualizedRideList rides={activeRides} emptyText="No active rides right now" />
-        </TabsContent>
-
-        <TabsContent value="events">
-          <div className="space-y-4">
-            <EventCalendar plannedEvents={plannedEvents} onSelectDate={setSelectedDate} selectedDate={selectedDate} />
-            {plannedEvents.length === 0 ? (
-              <EmptyState text="No planned events scheduled" />
-            ) : (
-              <div className="space-y-3">
-                {plannedEvents
-                  .filter((e) => !selectedDate || new Date(e.start_time).toDateString() === selectedDate.toDateString())
-                  .map((e) => {
-                    const participant = allParticipants.find(
-                      (p) => p.ride_id === e.id && p.user_email === user?.email
-                    );
-                    return (
-                      <EventRSVPCard
-                        key={e.id}
-                        event={e}
-                        user={user}
-                        myStatus={participant?.status}
-                      />
-                    );
-                  })}
-              </div>
-            )}
-          </div>
+          {activeRides.length === 0 ? (
+            <EmptyState text="No active rides right now" />
+          ) : (
+            <div className="space-y-3">
+              {activeRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="mine">
-          <VirtualizedRideList rides={myRides} emptyText="You haven't joined any rides yet" />
+          {myRides.length === 0 ? (
+            <EmptyState text="You haven't joined any rides yet" />
+          ) : (
+            <div className="space-y-3">
+              {myRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="past">
-          <VirtualizedRideList rides={pastRides} emptyText="No past rides" />
+          {pastRides.length === 0 ? (
+            <EmptyState text="No past rides" />
+          ) : (
+            <div className="space-y-3">
+              {pastRides.map((r, i) => <RideCard key={r.id} ride={r} index={i} />)}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
-      </div>
+
+      <CreateRideButton />
+    </div>
   );
 }
 

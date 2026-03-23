@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo, memo, Suspense } from "react";
-import { useTabNavigation } from "@/context/TabNavigationContext";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
@@ -16,12 +15,11 @@ import RideChat from "@/components/rides/RideChat";
 import { useToast } from "@/components/ui/use-toast";
 import { format, formatDistanceToNow, isPast, addMinutes } from "date-fns";
 import { motion } from "framer-motion";
-import { mapTileLayerProps } from "@/lib/mapTileConfig";
 
 const markerIcon = L.divIcon({
   className: "custom-marker",
-  html: `<div style="width:36px;height:36px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #7c2d12;box-shadow:0 0 16px rgba(249,115,22,0.5)" role="img" aria-label="Meetup location">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  html: `<div style="width:36px;height:36px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #7c2d12;box-shadow:0 0 16px rgba(249,115,22,0.5)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
   </div>`,
   iconSize: [36, 36],
   iconAnchor: [18, 36],
@@ -32,32 +30,10 @@ const vibeLabels = {
   scenic: "Scenic", adventure: "Adventure", commute: "Commute",
 };
 
-// Memoized map component to prevent re-renders during frequent location updates
-const RideMapComponent = memo(({ ride }) => (
-  <MapContainer
-    center={[ride.meetup_lat, ride.meetup_lng]}
-    zoom={14}
-    className="h-full w-full"
-    zoomControl={false}
-    attributionControl={false}
-  >
-    <TileLayer {...mapTileLayerProps} />
-    <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
-  </MapContainer>
-), (prevProps, nextProps) => {
-  // Only re-render if coordinates change
-  return (
-    prevProps.ride.meetup_lat === nextProps.ride.meetup_lat &&
-    prevProps.ride.meetup_lng === nextProps.ride.meetup_lng
-  );
-});
-
-RideMapComponent.displayName = "RideMapComponent";
-
 export default function RideDetails() {
-   const rideId = new URLSearchParams(window.location.search).get("id") ||
-     window.location.pathname.split("/rides/")[1];
-   const { goBack } = useTabNavigation();
+  const rideId = new URLSearchParams(window.location.search).get("id") ||
+    window.location.pathname.split("/rides/")[1];
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -87,8 +63,8 @@ export default function RideDetails() {
   const approvedRiders = participants.filter((p) => p.status === "approved");
   const pendingRequests = participants.filter((p) => p.status === "requested");
 
-  const joinMutation = useMutationWithOptimism(
-    async () => {
+  const joinMutation = useMutation({
+    mutationFn: async () => {
       const username = user?.username || user?.email?.split("@")[0] || "rider";
       await base44.entities.RideParticipant.create({
         ride_id: rideId,
@@ -98,105 +74,41 @@ export default function RideDetails() {
         role: "rider",
       });
     },
-    {
-      onMutate: async () => {
-        await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
-        const previousData = queryClient.getQueryData(["participants", rideId]);
-        const optimisticParticipant = {
-          id: `optimistic-${Date.now()}`,
-          ride_id: rideId,
-          user_email: user.email,
-          username: user?.username || user?.email?.split("@")[0] || "rider",
-          status: "approved",
-          role: "rider",
-        };
-        queryClient.setQueryData(["participants", rideId], (old) => [...(old || []), optimisticParticipant]);
-        return previousData;
-      },
-      onError: (err, newData, previousData) => {
-        if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-      },
-      errorMessage: "Failed to join ride",
-      successMessage: "You joined the ride!",
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["participants", rideId] });
+      toast({ title: "You joined the ride!" });
+    },
+  });
 
-  const approveMutation = useMutationWithOptimism(
-    async (participantId) => {
+  const approveMutation = useMutation({
+    mutationFn: async (participantId) => {
       await base44.entities.RideParticipant.update(participantId, { status: "approved" });
       await base44.entities.Ride.update(rideId, { rider_count: (ride.rider_count || 1) + 1 });
     },
-    {
-      onMutate: async (participantId) => {
-        await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
-        const previousData = queryClient.getQueryData(["participants", rideId]);
-        queryClient.setQueryData(["participants", rideId], (old) =>
-          old.map((p) => (p.id === participantId ? { ...p, status: "approved" } : p))
-        );
-        return previousData;
-      },
-      onError: (err, participantId, previousData) => {
-        if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-      },
-      successMessage: "Rider approved!",
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["participants", rideId] });
+      queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
+    },
+  });
 
-  const declineMutation = useMutationWithOptimism(
-    (participantId) =>
+  const declineMutation = useMutation({
+    mutationFn: (participantId) =>
       base44.entities.RideParticipant.update(participantId, { status: "declined" }),
-    {
-      onMutate: async (participantId) => {
-        await queryClient.cancelQueries({ queryKey: ["participants", rideId] });
-        const previousData = queryClient.getQueryData(["participants", rideId]);
-        queryClient.setQueryData(["participants", rideId], (old) =>
-          old.map((p) => (p.id === participantId ? { ...p, status: "declined" } : p))
-        );
-        return previousData;
-      },
-      onError: (err, participantId, previousData) => {
-        if (previousData) queryClient.setQueryData(["participants", rideId], previousData);
-      },
-      successMessage: "Rider declined!",
-    }
-  );
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["participants", rideId] }),
+  });
 
-  const statusMutation = useMutationWithOptimism(
-    async (newStatus) => {
-      await base44.entities.Ride.update(rideId, { status: newStatus });
-    },
-    {
-      onSuccess: (_, newStatus) => {
-        queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
-      },
-      successMessage: `Ride ${true === "active" ? "started" : "updated"}!`,
-    }
-  );
-
-  const statusMessageMutation = useMutationWithOptimism(
-    async () => {
-      if (!statusMsg.trim()) return;
-      await base44.entities.Ride.update(rideId, { status_message: statusMsg });
-    },
-    {
-      onMutate: async () => {
-        await queryClient.cancelQueries({ queryKey: ["ride", rideId] });
-        const previousData = queryClient.getQueryData(["ride", rideId]);
-        queryClient.setQueryData(["ride", rideId], (old) => ({ ...old, status_message: statusMsg }));
-        return previousData;
-      },
-      onError: (err, _, previousData) => {
-        if (previousData) queryClient.setQueryData(["ride", rideId], previousData);
-      },
-      successMessage: "Status updated!",
-    }
-  );
-
-  const updateStatus = (newStatus) => statusMutation.mutate(newStatus);
+  const updateStatus = async (newStatus) => {
+    await base44.entities.Ride.update(rideId, { status: newStatus });
+    queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
+    toast({ title: `Ride ${newStatus === "active" ? "started" : newStatus}!` });
+  };
 
   const updateStatusMessage = async () => {
-    await statusMessageMutation.mutate();
+    if (!statusMsg.trim()) return;
+    await base44.entities.Ride.update(rideId, { status_message: statusMsg });
+    queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
     setStatusMsg("");
+    toast({ title: "Status updated!" });
   };
 
   if (isLoading || !ride) {
@@ -212,15 +124,28 @@ export default function RideDetails() {
   const isExpired = isPast(endTime) && ride.status !== "completed" && ride.status !== "cancelled";
 
   return (
-    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none', overflowX: 'hidden' }}>
-      {/* Header removed - TopHeader component handles it */}
+    <div className="min-h-screen pb-24">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <h1 className="text-lg font-bold truncate">{ride.title}</h1>
+      </div>
 
-      {/* Map with strict memoization to prevent location update re-renders */}
+      {/* Map */}
       <div className="px-5 mb-4">
-        <div className="rounded-2xl overflow-hidden border border-border h-44" style={{ overflowX: 'hidden' }}>
-          <Suspense fallback={<div className="w-full h-full bg-secondary/40 animate-pulse" />}>
-            <RideMapComponent ride={ride} />
-          </Suspense>
+        <div className="rounded-2xl overflow-hidden border border-border h-44">
+          <MapContainer
+            center={[ride.meetup_lat, ride.meetup_lng]}
+            zoom={14}
+            className="h-full w-full"
+            zoomControl={false}
+            attributionControl={false}
+          >
+            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+            <Marker position={[ride.meetup_lat, ride.meetup_lng]} icon={markerIcon} />
+          </MapContainer>
         </div>
       </div>
 
@@ -350,20 +275,18 @@ export default function RideDetails() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="min-h-[44px] min-w-[44px] p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                      className="h-8 w-8 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"
                       onClick={() => approveMutation.mutate(p.id)}
-                      aria-label={`Approve ${p.username} to join ride`}
                     >
-                      <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                      <CheckCircle className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="min-h-[44px] min-w-[44px] p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       onClick={() => declineMutation.mutate(p.id)}
-                      aria-label={`Decline ${p.username} from joining ride`}
                     >
-                      <XCircle className="w-4 h-4" aria-hidden="true" />
+                      <XCircle className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -382,37 +305,28 @@ export default function RideDetails() {
                 onChange={(e) => setStatusMsg(e.target.value)}
                 className="bg-secondary border-border flex-1"
               />
-              <Button 
-                onClick={updateStatusMessage} 
-                disabled={statusMessageMutation.isPending}
-                size="sm" 
-                variant="secondary" 
-                className="min-h-[44px] min-w-[44px]"
-                aria-label="Send status update to riders"
-              >
-                <MessageSquare className="w-4 h-4" aria-hidden="true" />
+              <Button onClick={updateStatusMessage} size="sm" variant="secondary" className="px-3">
+                <MessageSquare className="w-4 h-4" />
               </Button>
             </div>
             <div className="flex gap-2">
               {ride.status === "meetup" && (
                 <Button
-                    onClick={() => updateStatus("active")}
-                    disabled={statusMutation.isPending}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
-                  >
-                    <Play className="w-4 h-4 mr-1.5" /> {statusMutation.isPending ? "Starting..." : "Start Ride"}
-                  </Button>
-                )}
-                {(ride.status === "meetup" || ride.status === "active") && (
-                  <Button
-                    onClick={() => updateStatus("completed")}
-                    disabled={statusMutation.isPending}
-                    variant="secondary"
-                    className="flex-1"
-                  >
-                    <Square className="w-4 h-4 mr-1.5" /> End Ride
-                  </Button>
-                )}
+                  onClick={() => updateStatus("active")}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
+                >
+                  <Play className="w-4 h-4 mr-1.5" /> Start Ride
+                </Button>
+              )}
+              {(ride.status === "meetup" || ride.status === "active") && (
+                <Button
+                  onClick={() => updateStatus("completed")}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  <Square className="w-4 h-4 mr-1.5" /> End Ride
+                </Button>
+              )}
             </div>
           </div>
         )}

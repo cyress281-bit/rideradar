@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
 import { Send, AlertTriangle, Navigation, MapPin, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import LiveRegion from "@/components/accessibility/LiveRegion";
 import { formatDistanceToNow } from "date-fns";
 
 const TAG_OPTIONS = [
@@ -27,19 +25,17 @@ function TagBadge({ tag }) {
 }
 
 export default function RideChat({ rideId, user, canChat }) {
-   const queryClient = useQueryClient();
-   const [text, setText] = useState("");
-   const [tag, setTag] = useState("chat");
-   const [liveMessage, setLiveMessage] = useState("");
-   const bottomRef = useRef(null);
-   const lastAnnouncedMessageIdRef = useRef(null);
-   const hasLoadedMessagesRef = useRef(false);
+  const queryClient = useQueryClient();
+  const [text, setText] = useState("");
+  const [tag, setTag] = useState("chat");
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
 
   const { data: messages = [] } = useQuery({
     queryKey: ["ride-chat", rideId],
     queryFn: () => base44.entities.RideMessage.filter({ ride_id: rideId }, "created_date", 100),
     enabled: !!rideId,
-    staleTime: 30_000,
+    refetchInterval: 8000,
   });
 
   // Real-time subscription
@@ -57,64 +53,20 @@ export default function RideChat({ rideId, user, canChat }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // Announce newly added chat messages without re-reading the full thread.
-  useEffect(() => {
-    if (messages.length === 0) return;
-
-    const latestMessage = messages[messages.length - 1];
-
-    if (!hasLoadedMessagesRef.current) {
-      hasLoadedMessagesRef.current = true;
-      lastAnnouncedMessageIdRef.current = latestMessage.id;
-      return;
-    }
-
-    if (latestMessage.id === lastAnnouncedMessageIdRef.current) return;
-
-    lastAnnouncedMessageIdRef.current = latestMessage.id;
-    const messagePrefix = latestMessage.user_email === user?.email ? "Message sent" : `New ${latestMessage.tag === "chat" ? "chat" : latestMessage.tag} message from ${latestMessage.username}`;
-    setLiveMessage(`${messagePrefix}. ${latestMessage.text.slice(0, 120)}`);
-  }, [messages, user?.email]);
-
-  const messageMutation = useMutationWithOptimism(
-    async (messageData) => {
-      const username = user.username || user.email?.split("@")[0] || "rider";
-      await base44.entities.RideMessage.create({
-        ride_id: rideId,
-        user_email: user.email,
-        username,
-        text: messageData.text,
-        tag: messageData.tag,
-      });
-    },
-    {
-      onMutate: async (messageData) => {
-        await queryClient.cancelQueries({ queryKey: ["ride-chat", rideId] });
-        const previousData = queryClient.getQueryData(["ride-chat", rideId]);
-        const optimisticMessage = {
-          id: `optimistic-${Date.now()}`,
-          ride_id: rideId,
-          user_email: user.email,
-          username: user.username || user.email?.split("@")[0] || "rider",
-          text: messageData.text,
-          tag: messageData.tag,
-          created_date: new Date().toISOString(),
-        };
-        queryClient.setQueryData(["ride-chat", rideId], (old) => [...(old || []), optimisticMessage]);
-        return previousData;
-      },
-      onError: (err, _, previousData) => {
-        if (previousData) queryClient.setQueryData(["ride-chat", rideId], previousData);
-      },
-    }
-  );
-
   const sendMessage = async () => {
-    if (!text.trim() || !user) return;
-    const messageText = text.trim();
-    const messageTag = tag;
+    if (!text.trim() || !user || sending) return;
+    setSending(true);
+    const username = user.username || user.email?.split("@")[0] || "rider";
+    await base44.entities.RideMessage.create({
+      ride_id: rideId,
+      user_email: user.email,
+      username,
+      text: text.trim(),
+      tag,
+    });
     setText("");
-    messageMutation.mutate({ text: messageText, tag: messageTag });
+    setSending(false);
+    queryClient.invalidateQueries({ queryKey: ["ride-chat", rideId] });
   };
 
   const handleKeyDown = (e) => {
@@ -126,7 +78,6 @@ export default function RideChat({ rideId, user, canChat }) {
 
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-secondary/20 overflow-hidden">
-      <LiveRegion message={liveMessage} politeness="polite" atomic={true} />
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-secondary/30">
         <MessageSquare className="w-4 h-4 text-primary" />
@@ -135,14 +86,7 @@ export default function RideChat({ rideId, user, canChat }) {
       </div>
 
       {/* Messages */}
-      <div
-        className="flex flex-col gap-2.5 p-3 h-64 overflow-y-auto"
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions text"
-        aria-atomic="false"
-        aria-label="Ride chat messages"
-      >
+      <div className="flex flex-col gap-2.5 p-3 h-64 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-center py-8">
             <div>
@@ -216,18 +160,15 @@ export default function RideChat({ rideId, user, canChat }) {
               }
               className="bg-secondary border-border flex-1 text-sm h-9"
               maxLength={280}
-              aria-label="Type a ride message"
             />
             <Button
-               onClick={sendMessage}
-               disabled={!text.trim() || messageMutation.isPending}
-               size="icon"
-               className="h-9 w-9 bg-primary hover:bg-primary/90 flex-shrink-0"
-               aria-label="Send message"
-               aria-busy={messageMutation.isPending}
-             >
-               <Send className="w-3.5 h-3.5" aria-hidden="true" />
-             </Button>
+              onClick={sendMessage}
+              disabled={!text.trim() || sending}
+              size="icon"
+              className="h-9 w-9 bg-primary hover:bg-primary/90 flex-shrink-0"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </Button>
           </div>
         </div>
       ) : (

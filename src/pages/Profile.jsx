@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMutationWithOptimism } from "@/hooks/useMutationWithOptimism";
-import { deleteUserAccount } from "@/functions/deleteUserAccount";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import SelectDrawer from "@/components/SelectDrawer";
-import DeleteAccountDialogs from "@/components/profile/DeleteAccountDialogs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Bike, Shield, Eye, EyeOff, Star, Route,
-  Save, LogOut, UserX, Camera, Loader
+  Save, LogOut, UserX
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
-import MotorcycleModels from "@/components/profile/MotorcycleModels";
-import RideHistory from "@/components/profile/RideHistory";
 
 const vibeOptions = [
   { value: "chill", label: "Chill" },
@@ -34,29 +29,23 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({
     username: "",
-    profile_pic_url: "",
     bike_make: "",
     bike_model: "",
     bike_year: "",
     bike_class: "",
-    motorcycle_models: [],
     ride_preferences: [],
     invisible_mode: false,
   });
-  const [uploading, setUploading] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then((u) => {
       setUser(u);
       setForm({
         username: u.username || u.email?.split("@")[0] || "",
-        profile_pic_url: u.profile_pic_url || "",
         bike_make: u.bike_make || "",
         bike_model: u.bike_model || "",
         bike_year: u.bike_year || "",
         bike_class: u.bike_class || "",
-        motorcycle_models: u.motorcycle_models || [],
         ride_preferences: u.ride_preferences || [],
         invisible_mode: u.invisible_mode || false,
       });
@@ -69,37 +58,22 @@ export default function Profile() {
     enabled: !!user?.email,
   });
 
-  const handlePicUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setForm((f) => ({ ...f, profile_pic_url: file_url }));
-      toast({ title: "Photo uploaded!" });
-    } catch (err) {
-      toast({ title: "Upload failed", variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const saveMutation = useMutationWithOptimism(
-    async () => {
+  const saveMutation = useMutation({
+    mutationFn: async () => {
       await base44.auth.updateMe({
         username: form.username,
-        profile_pic_url: form.profile_pic_url || undefined,
         bike_make: form.bike_make,
         bike_model: form.bike_model,
         bike_year: form.bike_year ? parseInt(form.bike_year) : undefined,
         bike_class: form.bike_class || undefined,
-        motorcycle_models: form.motorcycle_models,
         ride_preferences: form.ride_preferences,
         invisible_mode: form.invisible_mode,
       });
     },
-    { successMessage: "Profile saved!" }
-  );
+    onSuccess: () => {
+      toast({ title: "Profile saved!" });
+    },
+  });
 
   const toggleVibe = (vibe) => {
     setForm((f) => ({
@@ -112,56 +86,25 @@ export default function Profile() {
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  const handleDeleteAccount = async (confirmationText) => {
-    setIsDeletingAccount(true);
-    try {
-      await deleteUserAccount({
-        confirmationText,
-        finalConfirmation: true,
-      });
-      toast({ title: "Account deleted successfully" });
-      setTimeout(() => base44.auth.logout(), 1000);
-    } catch (err) {
-      toast({ title: "Deletion failed", variant: "destructive" });
-    } finally {
-      setIsDeletingAccount(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen pb-24" style={{ overscrollBehavior: 'none', overflowX: 'hidden' }}>
+    <div className="min-h-screen pb-24">
+      <div className="px-5 pt-4 pb-3">
+        <h1 className="text-lg font-bold">Profile</h1>
+        <p className="text-xs text-muted-foreground">Your rider identity</p>
+      </div>
+
       <div className="px-5 space-y-6">
-        {/* Avatar area with upload */}
+        {/* Avatar area */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex items-center gap-4"
         >
-          <label className="relative cursor-pointer group">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
-              {form.profile_pic_url ? (
-                <img src={form.profile_pic_url} alt="profile" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-              ) : (
-                <span className="text-2xl font-bold text-primary">
-                  {form.username?.[0]?.toUpperCase() || "?"}
-                </span>
-              )}
-            </div>
-            <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploading ? (
-                <Loader className="w-5 h-5 text-white animate-spin" />
-              ) : (
-                <Camera className="w-5 h-5 text-white" />
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePicUpload}
-              disabled={uploading}
-              className="hidden"
-            />
-          </label>
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+            <span className="text-2xl font-bold text-primary">
+              {form.username?.[0]?.toUpperCase() || "?"}
+            </span>
+          </div>
           <div>
             <p className="font-bold text-base">@{form.username || "anonymous"}</p>
             <div className="flex items-center gap-2 mt-1">
@@ -191,38 +134,31 @@ export default function Profile() {
           />
         </div>
 
-        {/* Primary Bike info */}
+        {/* Bike info */}
         <div>
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Bike className="w-3.5 h-3.5" /> Primary Bike
+            <Bike className="w-3.5 h-3.5" /> Your Bike
           </Label>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
             <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
             <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
           </div>
-          <SelectDrawer
-            value={form.bike_class}
-            onValueChange={(v) => updateField("bike_class", v)}
-            label="Select Bike Class"
-            placeholder="Bike class"
-            options={[
-              { value: "sportbike", label: "Sportbike" },
-              { value: "cruiser", label: "Cruiser" },
-              { value: "adventure", label: "Adventure" },
-              { value: "naked", label: "Naked" },
-              { value: "touring", label: "Touring" },
-              { value: "dual_sport", label: "Dual Sport" },
-              { value: "scooter", label: "Scooter" }
-            ]}
-          />
+          <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
+            <SelectTrigger className="bg-secondary border-border">
+              <SelectValue placeholder="Bike class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sportbike">Sportbike</SelectItem>
+              <SelectItem value="cruiser">Cruiser</SelectItem>
+              <SelectItem value="adventure">Adventure</SelectItem>
+              <SelectItem value="naked">Naked</SelectItem>
+              <SelectItem value="touring">Touring</SelectItem>
+              <SelectItem value="dual_sport">Dual Sport</SelectItem>
+              <SelectItem value="scooter">Scooter</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-
-        {/* Motorcycle models */}
-        <MotorcycleModels
-          models={form.motorcycle_models}
-          onUpdate={(models) => updateField("motorcycle_models", models)}
-        />
 
         {/* Ride preferences */}
         <div>
@@ -265,14 +201,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Ride History */}
-        <div>
-          <Label className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Route className="w-3.5 h-3.5" /> Ride History
-          </Label>
-          {user && <RideHistory userEmail={user.email} />}
-        </div>
-
         {/* Blocked users */}
         {blocks.length > 0 && (
           <div>
@@ -312,17 +240,12 @@ export default function Profile() {
 
         <Button
           variant="ghost"
-          className="w-full text-muted-foreground hover:text-foreground select-none"
+          className="w-full text-muted-foreground hover:text-foreground"
           onClick={() => base44.auth.logout()}
         >
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
         </Button>
-
-        <DeleteAccountDialogs
-          onConfirmDelete={handleDeleteAccount}
-          isDeleting={isDeletingAccount}
-        />
       </div>
     </div>
   );

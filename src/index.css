@@ -7,93 +7,73 @@
 @layer base {
   :root {
     --font-inter: 'Inter', sans-serif;
-    --background: 220 20% 4%;
-    --foreground: 0 0% 97%;
-    --card: 220 18% 8%;
-    --card-foreground: 0 0% 97%;
-    --popover: 220 18% 8%;
-    --popover-foreground: 0 0% 97%;
+    --background: 220 15% 6%;
+    --foreground: 0 0% 95%;
+    --card: 220 15% 9%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 15% 9%;
+    --popover-foreground: 0 0% 95%;
     --primary: 120 100% 47%;
-    --primary-foreground: 220 20% 4%;
-    --secondary: 220 18% 14%;
-    --secondary-foreground: 0 0% 92%;
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 12% 48%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 15% 14%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 10% 50%;
     --accent: 120 100% 47%;
-    --accent-foreground: 220 20% 4%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 16% 18%;
-    --input: 220 16% 18%;
+    --border: 220 15% 16%;
+    --input: 220 15% 16%;
     --ring: 120 100% 47%;
     --chart-1: 120 100% 47%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 1rem;
-    /* Map marker colors */
-    --marker-blue: 59 130 246;
-    --marker-blue-glow: rgba(59, 130, 246, 0.4);
-    --marker-blue-border: 30 58 95;
-    --marker-amber: 245 158 11;
-    --marker-amber-glow: rgba(245, 158, 11, 0.6);
-    --marker-amber-border: 146 64 14;
-    --marker-green: 0 240 50;
-    --marker-green-glow: rgba(0, 240, 50, 0.55);
-    --marker-green-border: 0 61 13;
-    --sidebar-background: 220 20% 4%;
-    --sidebar-foreground: 0 0% 97%;
+    --radius: 0.75rem;
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 120 100% 47%;
-    --sidebar-primary-foreground: 220 20% 4%;
-    --sidebar-accent: 220 18% 14%;
-    --sidebar-accent-foreground: 0 0% 97%;
-    --sidebar-border: 220 16% 18%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 220 15% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 15% 16%;
     --sidebar-ring: 120 100% 47%;
   }
 
   .dark {
-    --background: 220 20% 4%;
-    --foreground: 0 0% 97%;
-    --card: 220 18% 8%;
-    --card-foreground: 0 0% 97%;
-    --popover: 220 18% 8%;
-    --popover-foreground: 0 0% 97%;
+    --background: 220 15% 6%;
+    --foreground: 0 0% 95%;
+    --card: 220 15% 9%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 15% 9%;
+    --popover-foreground: 0 0% 95%;
     --primary: 120 100% 47%;
-    --primary-foreground: 220 20% 4%;
-    --secondary: 220 18% 14%;
-    --secondary-foreground: 0 0% 92%;
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 12% 48%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 15% 14%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 10% 50%;
     --accent: 120 100% 47%;
-    --accent-foreground: 220 20% 4%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 16% 18%;
-    --input: 220 16% 18%;
+    --border: 220 15% 16%;
+    --input: 220 15% 16%;
     --ring: 120 100% 47%;
     --chart-1: 120 100% 47%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    /* Map marker colors */
-    --marker-blue: 59 130 246;
-    --marker-blue-glow: rgba(59, 130, 246, 0.4);
-    --marker-blue-border: 30 58 95;
-    --marker-amber: 245 158 11;
-    --marker-amber-glow: rgba(245, 158, 11, 0.6);
-    --marker-amber-border: 146 64 14;
-    --marker-green: 0 240 50;
-    --marker-green-glow: rgba(0, 240, 50, 0.55);
-    --marker-green-border: 0 61 13;
-    --sidebar-background: 220 20% 4%;
-    --sidebar-foreground: 0 0% 97%;
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 120 100% 47%;
-    --sidebar-primary-foreground: 220 20% 4%;
-    --sidebar-accent: 220 18% 14%;
-    --sidebar-accent-foreground: 0 0% 97%;
-    --sidebar-border: 220 16% 18%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 220 15% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 15% 16%;
     --sidebar-ring: 120 100% 47%;
   }
 }
@@ -105,63 +85,7 @@
 
   body {
     @apply bg-background text-foreground font-inter;
-    overscroll-behavior: none;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
   }
-
-  main {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  button, [role="button"], a {
-    @apply select-none;
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Visible focus states for accessibility */
-  button:focus-visible,
-  [role="button"]:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible,
-  [tabindex]:focus-visible {
-    @apply outline-2 outline-offset-2 outline-ring;
-  }
-
-  h1 {
-    @apply text-3xl font-black tracking-tight;
-  }
-
-  h2 {
-    @apply text-2xl font-extrabold tracking-tight;
-  }
-
-  h3 {
-    @apply text-xl font-bold tracking-tight;
-  }
-
-  h4 {
-    @apply text-lg font-semibold tracking-tight;
-  }
-
-  p {
-    @apply text-base leading-relaxed;
-  }
-
-  small {
-    @apply text-sm text-muted-foreground;
-  }
-}
-
-/* Lazy-loading & render performance for all images */
-img {
-  content-visibility: auto;
-  will-change: auto;
 }
 
 /* Custom scrollbar for dark theme */
@@ -179,25 +103,12 @@ img {
 /* Leaflet overrides for dark theme */
 .leaflet-container {
   background: hsl(220 15% 6%) !important;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
 }
 .leaflet-tile-pane {
   filter: brightness(0.7) contrast(1.1) saturate(0.8);
-  will-change: transform;
 }
 .leaflet-control-zoom a {
   background: hsl(220 15% 12%) !important;
   color: hsl(0 0% 90%) !important;
   border-color: hsl(220 15% 18%) !important;
-  min-height: 44px;
-  min-width: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.leaflet-marker-pane img {
-  -webkit-user-select: none;
-  user-select: none;
 }
