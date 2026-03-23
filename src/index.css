@@ -158,11 +158,10 @@
   }
 }
 
-/* Aggressive image lazy-loading defaults */
+/* Lazy-loading & render performance for all images */
 img {
-  loading: lazy;
-  decoding: async;
   content-visibility: auto;
+  will-change: auto;
 }
 
 /* Custom scrollbar for dark theme */
