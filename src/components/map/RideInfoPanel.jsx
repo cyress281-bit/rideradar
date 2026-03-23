@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-
 import { motion } from "framer-motion";
-import { X, Clock, Users, Bike, MapPin, CheckCircle, UserPlus, Check, ArrowRight } from "lucide-react";
+import { X, Clock, Users, Bike, MapPin, UserPlus, Check, MessageSquare, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { formatDistanceToNow } from "date-fns";
+import RideChat from "@/components/rides/RideChat";
 
 const vibeColors = {
   chill: "bg-blue-500/15 text-blue-400 border-blue-500/20",
@@ -19,6 +19,7 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [activeTab, setActiveTab] = useState("info");
 
   const approved = participants.filter((p) => p.status === "approved");
   const checkedIn = riderLocations.filter((l) => l.checked_in && l.ride_id === ride.id);
@@ -62,6 +63,31 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       {/* Top accent */}
       <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
 
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("info")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${
+            activeTab === "info" ? "text-foreground border-b-2 border-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Info className="w-3.5 h-3.5" /> Info
+        </button>
+        <button
+          onClick={() => setActiveTab("chat")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${
+            activeTab === "chat" ? "text-foreground border-b-2 border-primary" : "text-muted-foreground"
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" /> Chat
+        </button>
+      </div>
+
+      {activeTab === "chat" ? (
+        <div className="p-3">
+          <RideChat rideId={ride.id} user={user} canChat={joined || isHost} />
+        </div>
+      ) : (
       <div className="p-4">
         <button
           onClick={onClose}
@@ -155,6 +181,5 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
           )}
         </div>
       </div>
-    </motion.div>
   );
 }
