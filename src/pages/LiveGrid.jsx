@@ -133,11 +133,16 @@ export default function LiveGrid() {
   }, [user]);
 
   // Auto check-in: if within radius of meetup, mark checked in
+  // Uses stable refs to avoid restarting GPS watchPosition on every poll cycle
   const handlePositionUpdate = useCallback(async (lat, lng) => {
     setMyPosition({ lat, lng });
     if (!user) return;
 
-    // Only act on rides user is approved for
+    const rides = ridesRef.current;
+    const allParticipants = allParticipantsRef.current;
+    const riderLocations = riderLocationsRef.current;
+    const checkedInRides = checkedInRidesRef.current;
+
     const myApprovedRideIds = allParticipants
       .filter((p) => p.user_email === user.email && p.status === "approved")
       .map((p) => p.ride_id);
@@ -151,7 +156,6 @@ export default function LiveGrid() {
         if (dist <= CHECK_IN_RADIUS_METERS && !alreadyCheckedIn) {
           setCheckedInRides((prev) => new Set([...prev, ride.id]));
           await upsertLocation(ride, lat, lng, true);
-          // Update ride rider_count
           const checkedInCount = riderLocations.filter((l) => l.ride_id === ride.id && l.checked_in).length + 1;
           await base44.entities.Ride.update(ride.id, {
             rider_count: checkedInCount,
@@ -163,11 +167,10 @@ export default function LiveGrid() {
           await upsertLocation(ride, lat, lng, true);
         }
       } else if (ride.status === "active") {
-        // Just update position for live tracking
         await upsertLocation(ride, lat, lng, true);
       }
     }
-  }, [user, rides, allParticipants, checkedInRides, riderLocations, upsertLocation, queryClient]);
+  }, [user, upsertLocation, queryClient]); // stable deps only — reads live data via refs
 
   // Start GPS watch
   useEffect(() => {
