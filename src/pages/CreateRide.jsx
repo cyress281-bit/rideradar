@@ -257,6 +257,24 @@ export default function CreateRide() {
           />
         )}
 
+        {/* Registration fee for planned events */}
+        {rideType === "planned_event" && (
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5" /> Registration Fee (USD, optional)
+            </Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 15.00 — leave blank for free"
+              value={form.registration_fee}
+              onChange={(e) => updateField("registration_fee", e.target.value)}
+              className="bg-secondary border-border"
+            />
+          </div>
+        )}
+
         {rideMode === "now" && (
           <div className="flex items-start gap-2.5 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2.5">
             <Zap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
