@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import HomeHeader from "../components/home/HomeHeader";
 import StatsBar from "../components/home/StatsBar";
-import MiniMap from "../components/home/MiniMap";
 import RidePreviewCard from "../components/rides/RidePreviewCard";
 import CreateRideButton from "../components/rides/CreateRideButton";
 
@@ -37,7 +36,6 @@ export default function Home() {
         activeRides={activeRides.length}
         meetups={meetupRides.length}
       />
-      <MiniMap rides={allVisibleRides} />
 
       <div className="px-5 py-3">
         <div className="grid grid-cols-2 gap-3">
