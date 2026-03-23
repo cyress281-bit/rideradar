@@ -8,7 +8,7 @@ import { rafThrottle } from "@/lib/throttle";
 const LiveGridMap = lazy(() => import("@/components/map/LiveGridMap"));
 const RideInfoPanel = lazy(() => import("@/components/map/RideInfoPanel"));
 
-const CHECK_IN_RADIUS_METERS = 300;
+const CHECK_IN_RADIUS_METERS = 300; // live radar
 const LOCATION_UPDATE_INTERVAL = 8000;
 
 function getDistance(lat1, lng1, lat2, lng2) {
