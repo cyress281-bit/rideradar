@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,10 +8,19 @@ import CreateRideButton from "../components/rides/CreateRideButton";
 
 export default function Rides() {
   const [user, setUser] = useState(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  // Real-time subscription
+  useEffect(() => {
+    const unsub = base44.entities.Ride.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["all-rides"] });
+    });
+    return unsub;
+  }, [queryClient]);
 
   const { data: allRides = [] } = useQuery({
     queryKey: ["all-rides"],
