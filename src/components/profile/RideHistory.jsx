@@ -25,6 +25,9 @@ export default function RideHistory({ userEmail }) {
     enabled: rideParticipants.length > 0,
   });
 
+  // Exclude cancelled rides that were never fulfilled (meetup/active that got cancelled)
+  const visibleRides = rides.filter(r => r.status !== "cancelled");
+
   const totalMiles = rides.reduce((sum, r) => sum + (r.estimated_miles || 0), 0);
 
   if (rideParticipants.length === 0) {
