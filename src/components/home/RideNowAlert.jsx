@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, X } from "lucide-react";
+import { Zap, X, AlertTriangle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 function getDistance(lat1, lng1, lat2, lng2) {
@@ -35,8 +35,24 @@ export default function RideNowAlert({ user }) {
       if (event.type !== "create") return;
       const notif = event.data;
       if (!notif || notif.read) return;
-      // Skip if this user is the host
+      // Skip if this user is the sender
       if (user && notif.host_username === (user.username || user.email?.split("@")[0])) return;
+
+      // Skip SOS alerts if user has disabled them in settings
+      const isSOS = notif.ride_id === "sos";
+      if (isSOS && user?.sos_notifications === false) return;
+
+      // Filter regular ride alerts by distance (15 mi)
+      if (!isSOS && userPos && notif.meetup_lat && notif.meetup_lng) {
+        const miles = getDistance(userPos.lat, userPos.lng, notif.meetup_lat, notif.meetup_lng);
+        if (miles > 15) return;
+      }
+
+      // Filter SOS alerts by distance (50 mi)
+      if (isSOS && userPos && notif.meetup_lat && notif.meetup_lng) {
+        const miles = getDistance(userPos.lat, userPos.lng, notif.meetup_lat, notif.meetup_lng);
+        if (miles > 50) return;
+      }
 
       let distLabel = "nearby";
       if (userPos && notif.meetup_lat && notif.meetup_lng) {
@@ -44,13 +60,14 @@ export default function RideNowAlert({ user }) {
         distLabel = `${miles.toFixed(1)} mi away`;
       }
 
-      const alert = { ...notif, distLabel, alertId: notif.id };
+      const alert = { ...notif, distLabel, alertId: notif.id, isSOS };
       setAlerts((prev) => [alert, ...prev].slice(0, 3));
 
-      // Auto-dismiss after 12 seconds
+      // SOS stays longer
+      const timeout = isSOS ? 30000 : 12000;
       setTimeout(() => {
         setAlerts((prev) => prev.filter((a) => a.alertId !== notif.id));
-      }, 12000);
+      }, timeout);
     });
     return unsub;
   }, [user, userPos]);
