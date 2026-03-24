@@ -19,9 +19,9 @@ export default function AppLayout() {
   const isTabRoot = ["/", "/grid", "/feed", "/messages", "/profile"].includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-background font-inter" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+    <div className="h-screen bg-background font-inter flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       <RideNowAlert user={user} />
-      <main className="pb-24 w-full">
+      <main className="flex-1 overflow-y-auto pb-24 w-full">
         <Outlet />
       </main>
       <BottomNav />
