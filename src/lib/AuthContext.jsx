@@ -15,6 +15,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAppState();
+    // Safety timeout: if auth hasn't resolved in 5s, force it done
+    const timeout = setTimeout(() => {
+      setIsLoadingAuth(false);
+      setIsLoadingPublicSettings(false);
+    }, 5000);
+    return () => clearTimeout(timeout);
   }, []);
 
   const checkAppState = async () => {
@@ -34,22 +40,24 @@ export const AuthProvider = ({ children }) => {
       });
       
       try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
-        
-        // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-        }
-        setIsLoadingPublicSettings(false);
+       const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
+       setAppPublicSettings(publicSettings);
+
+       // If we got the app public settings successfully, check if user is authenticated
+       if (appParams.token) {
+         await checkUserAuth();
+       } else {
+         setIsLoadingAuth(false);
+         setIsAuthenticated(false);
+       }
+       setIsLoadingPublicSettings(false);
       } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
+       console.error('App state check failed:', appError);
+       setIsLoadingPublicSettings(false);
+       setIsLoadingAuth(false);
+
+       // Handle app-level errors
+       if (appError.status === 403 && appError.data?.extra_data?.reason) {
           const reason = appError.data.extra_data.reason;
           if (reason === 'auth_required') {
             setAuthError({
