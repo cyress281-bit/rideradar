@@ -1,16 +1,53 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, X, ShieldOff } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function SOSButton({ user }) {
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const queryClient = useQueryClient();
+
+  const selfUsername = user?.username || user?.email?.split("@")[0];
+
+  // Check if user has an active SOS notification in DB
+  const { data: activeSOS = [] } = useQuery({
+    queryKey: ["my-sos", user?.email],
+    queryFn: () => base44.entities.RideNotification.filter({ ride_id: "sos", host_username: selfUsername }, "-created_date", 1),
+    enabled: !!user?.email,
+    refetchInterval: 15000,
+  });
+
+  const activeSOSNotif = activeSOS[0] || null;
+  const sent = !!activeSOSNotif;
 
   const handlePress = () => {
-    if (sent) return;
+    if (sent) {
+      setConfirmCancel(true);
+      return;
+    }
     setConfirming(true);
+  };
+
+  const handleCancelSOS = async () => {
+    setCancelling(true);
+    setConfirmCancel(false);
+    // Delete the SOS notification
+    if (activeSOSNotif) {
+      await base44.entities.RideNotification.delete(activeSOSNotif.id);
+    }
+    // Remove from all active ride participants
+    const participations = await base44.entities.RideParticipant.filter({ user_email: user.email, status: "approved" });
+    await Promise.all(participations.map(p => base44.entities.RideParticipant.update(p.id, { status: "left" })));
+    // Remove rider locations
+    const locations = await base44.entities.RiderLocation.filter({ user_email: user.email, is_active: true });
+    await Promise.all(locations.map(l => base44.entities.RiderLocation.update(l.id, { is_active: false })));
+    queryClient.invalidateQueries({ queryKey: ["my-sos", user?.email] });
+    queryClient.invalidateQueries({ queryKey: ["sos-notifications"] });
+    setCancelling(false);
   };
 
   const handleConfirm = async () => {
