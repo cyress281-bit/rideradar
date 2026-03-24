@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Marker, useMap } from "react-leaflet";
+import React from "react";
+import { Marker } from "react-leaflet";
 import L from "leaflet";
 
 function createSOSIcon(username) {
