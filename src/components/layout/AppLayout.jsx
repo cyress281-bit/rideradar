@@ -34,4 +34,7 @@ export default function AppLayout() {
           <Outlet />
         </motion.main>
       </AnimatePresence>
+      <BottomNav />
+    </div>
+  );
 }
