@@ -48,6 +48,9 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       role: "rider",
     });
     await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
+    queryClient.invalidateQueries({ queryKey: ["rides-home"] });
+    queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
+    queryClient.invalidateQueries({ queryKey: ["grid-participants"] });
     setJoined(true);
     setJoining(false);
   };
