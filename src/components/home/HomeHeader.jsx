@@ -16,7 +16,7 @@ export default function HomeHeader({ username, user }) {
           <img
             src="https://media.base44.com/images/public/69c00371996a3698d9301734/b98c6b34e_generated_image.png"
             alt="RideRadar logo"
-            className="w-9 h-9 rounded-xl object-cover"
+            className="w-9 h-9 rounded-xl object-cover border-2 border-primary"
           />
           <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
         </motion.div>
