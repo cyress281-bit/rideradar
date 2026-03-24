@@ -6,6 +6,7 @@ import { ArrowLeft, Users, MapPin, Clock, Bike, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import RideChat from "@/components/rides/RideChat";
+import RideDetailMap from "@/components/rides/RideDetailMap";
 import HostControls from "@/components/rides/HostControls";
 
 const vibeColors = {
@@ -146,6 +147,11 @@ export default function RideDetail() {
             <p className="text-lg font-bold">{ride.duration_minutes}m</p>
           </div>
         </div>
+
+        {/* Map */}
+        {ride.meetup_lat && ride.meetup_lng && (
+          <RideDetailMap ride={ride} />
+        )}
 
         {/* Location */}
         {ride.meetup_address && (
