@@ -164,7 +164,7 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
         )}
 
         {/* Join button */}
-        {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && (
+        {user && !isHost && ride.status !== "completed" && ride.status !== "cancelled" && new Date(ride.start_time) > new Date() && (
           <button
             onClick={handleJoin}
             disabled={joining || joined}
