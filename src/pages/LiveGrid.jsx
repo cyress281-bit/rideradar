@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio, Layers, RefreshCw } from "lucide-react";
 import MeetupPin from "@/components/map/MeetupPin";
+import FeedPostPin from "@/components/map/FeedPostPin";
 import ActiveRiderDot from "@/components/map/ActiveRiderDot";
 import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
@@ -219,6 +220,21 @@ export default function LiveGrid() {
   });
 
   const [selectedSOS, setSelectedSOS] = useState(null);
+  const [selectedFeedPost, setSelectedFeedPost] = useState(null);
+
+  // Fetch recent ride feed posts (last 48h that have a ride_id)
+  const { data: rideFeedPosts = [] } = useQuery({
+    queryKey: ["ride-feed-posts-map"],
+    queryFn: async () => {
+      const posts = await base44.entities.FeedPost.filter({ post_type: "ride" }, "-created_date", 30);
+      const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+      return posts.filter((p) => p.ride_id && new Date(p.created_date).getTime() > cutoff);
+    },
+    refetchInterval: 30000,
+  });
+
+  // Build a map of ride_id -> ride for quick lookup
+  const ridesById = Object.fromEntries(rides.map((r) => [r.id, r]));
 
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
@@ -284,6 +300,20 @@ export default function LiveGrid() {
               />
             ))
         )}
+
+        {/* Feed post ride pins */}
+        {rideFeedPosts.map((post) => {
+          const ride = ridesById[post.ride_id];
+          if (!ride) return null;
+          return (
+            <FeedPostPin
+              key={`feedpost-${post.id}`}
+              post={post}
+              rideLocation={{ lat: ride.meetup_lat, lng: ride.meetup_lng }}
+              onClick={(p, loc) => setSelectedFeedPost({ post: p, ride })}
+            />
+          );
+        })}
 
         {/* B-DOWN / SOS pins — always on top */}
         {sosAlerts.map((alert) => (
@@ -376,6 +406,73 @@ export default function LiveGrid() {
             user={user}
             onClose={() => setSelectedRide(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Feed post popup */}
+      <AnimatePresence>
+        {selectedFeedPost && (
+          <motion.div
+            initial={{ y: 200, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 200, opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="absolute bottom-20 left-3 right-3 z-[1000] bg-card/97 backdrop-blur-2xl rounded-2xl border border-purple-500/30 shadow-2xl overflow-hidden"
+          >
+            <div className="h-1 w-full bg-gradient-to-r from-purple-600 to-violet-400" />
+            <div className="p-4">
+              <button
+                onClick={() => setSelectedFeedPost(null)}
+                className="absolute top-4 right-4 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+              >
+                <span className="text-xs text-muted-foreground font-bold">✕</span>
+              </button>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-sm">🏍️</div>
+                <div>
+                  <p className="text-sm font-bold">@{selectedFeedPost.post.username}</p>
+                  <p className="text-[10px] text-muted-foreground">{selectedFeedPost.ride.title}</p>
+                </div>
+              </div>
+              {selectedFeedPost.post.content && (
+                <p className="text-sm text-foreground/90 mb-3 leading-snug">{selectedFeedPost.post.content}</p>
+              )}
+              {selectedFeedPost.post.media_url && (
+                <div className="rounded-xl overflow-hidden h-32 mb-3">
+                  <img src={selectedFeedPost.post.media_url} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground mb-3">
+                <div className="bg-secondary/50 rounded-lg px-2.5 py-1.5">
+                  <span className="block font-semibold text-foreground">{selectedFeedPost.ride.status.toUpperCase()}</span>
+                  Ride Status
+                </div>
+                <div className="bg-secondary/50 rounded-lg px-2.5 py-1.5">
+                  <span className="block font-semibold text-foreground">{selectedFeedPost.ride.rider_count || 1}</span>
+                  Riders
+                </div>
+              </div>
+              {selectedFeedPost.ride.status !== "completed" && selectedFeedPost.ride.status !== "cancelled" && (
+                <button
+                  onClick={async () => {
+                    if (!user) return;
+                    const username = user.username || user.email?.split("@")[0] || "rider";
+                    await base44.entities.RideParticipant.create({
+                      ride_id: selectedFeedPost.ride.id,
+                      user_email: user.email,
+                      username,
+                      status: "approved",
+                      role: "rider",
+                    });
+                    setSelectedFeedPost(null);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 font-bold text-sm hover:bg-purple-600/30 transition-colors"
+                >
+                  🏍️ Join This Ride
+                </button>
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
