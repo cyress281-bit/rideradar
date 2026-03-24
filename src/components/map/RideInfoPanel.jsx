@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { X, Clock, Users, Bike, MapPin, UserPlus, Check, MessageSquare, Info } from "lucide-react";
