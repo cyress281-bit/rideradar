@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Loader, Route, Eye, EyeOff, Save, LogOut, UserX, Settings, Grid3X3, Bike, Pencil, X, Check } from "lucide-react";
+import { Camera, Loader, Route, Eye, EyeOff, Save, LogOut, UserX, Settings, Grid3X3, Bike, Pencil, X, Check, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
 import MotorcycleModels from "@/components/profile/MotorcycleModels";
@@ -91,6 +92,7 @@ export default function Profile() {
     onSuccess: () => toast({ title: "Profile saved!" }),
   });
 
+  const { theme, toggle: toggleTheme } = useTheme();
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
   const initials = form.username?.[0]?.toUpperCase() || "?";
@@ -260,6 +262,20 @@ export default function Profile() {
 
         {activeTab === "settings" && (
           <div className="space-y-5">
+            {/* Theme */}
+            <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {theme === "dark" ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-amber-400" />}
+                  <div>
+                    <p className="text-sm font-medium">{theme === "dark" ? "Dark Mode" : "Light Mode"}</p>
+                    <p className="text-[11px] text-muted-foreground">Switch app appearance</p>
+                  </div>
+                </div>
+                <Switch checked={theme === "light"} onCheckedChange={toggleTheme} />
+              </div>
+            </div>
+
             {/* Privacy */}
             <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
               <div className="flex items-center justify-between">
