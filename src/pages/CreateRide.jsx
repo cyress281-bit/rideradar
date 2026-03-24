@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,24 @@ const pinIcon = L.divIcon({
   iconAnchor: [20, 40],
 });
 
-function LocationPicker({ position, setPosition }) {
+function MapPanner({ position }) {
+  const map = useMap();
+  const prev = useRef(null);
+  useEffect(() => {
+    if (position && position !== prev.current) {
+      map.flyTo(position, 14, { duration: 1 });
+      prev.current = position;
+    }
+  }, [position, map]);
+  return null;
+}
+
+function LocationPicker({ position, setPosition, onMapClick }) {
   useMapEvents({
     click(e) {
-      setPosition([e.latlng.lat, e.latlng.lng]);
+      const pos = [e.latlng.lat, e.latlng.lng];
+      setPosition(pos);
+      onMapClick?.(e.latlng.lat, e.latlng.lng);
     },
   });
   return position ? <Marker position={position} icon={pinIcon} /> : null;
@@ -35,7 +49,9 @@ export default function CreateRide() {
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [position, setPosition] = useState(null);
-  const [rideMode, setRideMode] = useState("now"); // "now" | "schedule"
+  const [rideMode, setRideMode] = useState("now");
+  const [geocoding, setGeocoding] = useState(false);
+  const debounceRef = useRef(null);
   const [form, setForm] = useState({
     title: "",
     start_time: "",
@@ -47,6 +63,40 @@ export default function CreateRide() {
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  // Address → pin (geocode on input)
+  const geocodeAddress = useCallback((address) => {
+    if (!address || address.length < 5) return;
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setGeocoding(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data = await res.json();
+        if (data.length > 0) {
+          setPosition([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        }
+      } catch {}
+      setGeocoding(false);
+    }, 700);
+  }, []);
+
+  // Pin → address (reverse geocode on map click)
+  const reverseGeocode = useCallback(async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const data = await res.json();
+      if (data.display_name) {
+        updateField("meetup_address", data.display_name);
+      }
+    } catch {}
   }, []);
 
   const handleSubmit = async (e) => {
@@ -135,18 +185,29 @@ export default function CreateRide() {
               attributionControl={false}
             >
               <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-              <LocationPicker position={position} setPosition={setPosition} />
+              <MapPanner position={position} />
+              <LocationPicker position={position} setPosition={setPosition} onMapClick={reverseGeocode} />
             </MapContainer>
           </div>
           <p className="text-[10px] text-muted-foreground mt-1.5">Tap the map to set your meetup point</p>
         </div>
 
-        <Input
-          placeholder="Meetup address (optional)"
-          value={form.meetup_address}
-          onChange={(e) => updateField("meetup_address", e.target.value)}
-          className="bg-secondary border-border"
-        />
+        <div className="relative">
+          <Input
+            placeholder="Meetup address — type to drop a pin"
+            value={form.meetup_address}
+            onChange={(e) => {
+              updateField("meetup_address", e.target.value);
+              geocodeAddress(e.target.value);
+            }}
+            className="bg-secondary border-border pr-8"
+          />
+          {geocoding && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="w-3.5 h-3.5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
+            </div>
+          )}
+        </div>
 
         <div>
           <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
