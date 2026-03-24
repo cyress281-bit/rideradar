@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { User, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { motion } from "framer-motion";
+import SOSButton from "./SOSButton";
 
 export default function HomeHeader({ username, user }) {
   return (
@@ -26,6 +27,7 @@ export default function HomeHeader({ username, user }) {
       </div>
 
       <div className="flex items-center gap-2">
+        <SOSButton user={user} />
         <button className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
           <Bell className="w-4.5 h-4.5 text-foreground" />
         </button>
