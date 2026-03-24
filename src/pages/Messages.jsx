@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Users, Plus, X, Check } from "lucide-react";
+import { MessageSquare, Users, Plus, X, Check, UserCheck, UserX } from "lucide-react";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import RideChat from "@/components/rides/RideChat";
@@ -16,25 +17,32 @@ export default function Messages() {
   const [showFriendsTab, setShowFriendsTab] = useState(false);
   const [searchUsername, setSearchUsername] = useState("");
   const [addingFriend, setAddingFriend] = useState(false);
+  const [addFeedback, setAddFeedback] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Fetch friends
+  // Fetch all friendships (accepted + pending)
   const { data: friendships = [] } = useQuery({
     queryKey: ["friends", user?.email],
     queryFn: async () => {
-      const sent = await base44.entities.UserFriend.filter({ user_email: user.email, status: "accepted" });
-      const received = await base44.entities.UserFriend.filter({ friend_email: user.email, status: "accepted" });
+      const sent = await base44.entities.UserFriend.filter({ user_email: user.email });
+      const received = await base44.entities.UserFriend.filter({ friend_email: user.email });
       return [...sent, ...received];
     },
     enabled: !!user?.email,
   });
 
-  const friends = friendships.map((f) => ({
+  const acceptedFriendships = friendships.filter((f) => f.status === "accepted");
+  const friends = acceptedFriendships.map((f) => ({
     email: f.user_email === user.email ? f.friend_email : f.user_email,
   }));
+
+  // Pending requests SENT TO the current user (they need to accept/decline)
+  const pendingRequests = friendships.filter(
+    (f) => f.status === "requested" && f.friend_email === user?.email
+  );
 
   // Latest DM per friend
   const { data: latestDMs = [] } = useQuery({
@@ -56,26 +64,46 @@ export default function Messages() {
   const handleAddFriend = async () => {
     if (!searchUsername.trim()) return;
     setAddingFriend(true);
-    // Search for user by username
-    const users = await base44.entities.User.list();
-    const foundUser = users.find((u) => u.username?.toLowerCase() === searchUsername.trim().toLowerCase());
+    setAddFeedback(null);
+    const allUsers = await base44.entities.User.list();
+    const foundUser = allUsers.find((u) => u.username?.toLowerCase() === searchUsername.trim().toLowerCase());
     if (!foundUser) {
+      setAddFeedback({ type: "error", msg: "User not found" });
       setAddingFriend(false);
       return;
     }
-    // Check if already friends
-    const existing = friendships.find((f) => (f.user_email === foundUser.email || f.friend_email === foundUser.email) && f.status === "accepted");
+    if (foundUser.email === user.email) {
+      setAddFeedback({ type: "error", msg: "That's you!" });
+      setAddingFriend(false);
+      return;
+    }
+    // Check for any existing relationship
+    const existing = friendships.find(
+      (f) => f.user_email === foundUser.email || f.friend_email === foundUser.email
+    );
     if (existing) {
+      setAddFeedback({ type: "error", msg: existing.status === "accepted" ? "Already friends" : "Request already sent" });
       setAddingFriend(false);
       return;
     }
     await base44.entities.UserFriend.create({
       user_email: user.email,
       friend_email: foundUser.email,
-      status: "accepted",
+      status: "requested",
     });
     setSearchUsername("");
+    setAddFeedback({ type: "success", msg: `Friend request sent to @${foundUser.username}` });
     setAddingFriend(false);
+    queryClient.invalidateQueries({ queryKey: ["friends", user.email] });
+  };
+
+  const handleAccept = async (friendship) => {
+    await base44.entities.UserFriend.update(friendship.id, { status: "accepted" });
+    queryClient.invalidateQueries({ queryKey: ["friends", user.email] });
+  };
+
+  const handleDecline = async (friendship) => {
+    await base44.entities.UserFriend.delete(friendship.id);
     queryClient.invalidateQueries({ queryKey: ["friends", user.email] });
   };
 
@@ -152,11 +180,16 @@ export default function Messages() {
           </button>
           <button
             onClick={() => setShowFriendsTab(true)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+            className={`relative text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
               showFriendsTab ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/50"
             }`}
           >
             Friends {friends.length > 0 && `(${friends.length})`}
+            {pendingRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-[9px] font-black text-primary-foreground flex items-center justify-center">
+                {pendingRequests.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -199,7 +232,7 @@ export default function Messages() {
              <div className="flex gap-2">
                <Input
                  value={searchUsername}
-                 onChange={(e) => setSearchUsername(e.target.value)}
+                 onChange={(e) => { setSearchUsername(e.target.value); setAddFeedback(null); }}
                  onKeyDown={(e) => e.key === "Enter" && handleAddFriend()}
                  placeholder="username"
                  className="bg-secondary border-border flex-1 text-sm h-9"
@@ -212,6 +245,30 @@ export default function Messages() {
                  {addingFriend ? "..." : <Plus className="w-4 h-4" />}
                </button>
              </div>
+             {addFeedback && (
+               <p className={`text-xs mt-1 ${addFeedback.type === "error" ? "text-destructive" : "text-primary"}`}>
+                 {addFeedback.msg}
+               </p>
+             )}
+             {/* Pending incoming requests */}
+             {pendingRequests.length > 0 && (
+               <div className="pt-2 space-y-2">
+                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Friend Requests</p>
+                 {pendingRequests.map((req) => (
+                   <div key={req.id} className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                     <p className="text-xs font-semibold">{req.user_email}</p>
+                     <div className="flex gap-2">
+                       <button onClick={() => handleAccept(req)} className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-lg transition-colors">
+                         <Check className="w-3 h-3" /> Accept
+                       </button>
+                       <button onClick={() => handleDecline(req)} className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors">
+                         <X className="w-3 h-3" /> Decline
+                       </button>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             )}
             </div>
 
             {friends.length === 0 ? (
