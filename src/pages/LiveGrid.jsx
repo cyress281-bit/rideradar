@@ -321,8 +321,15 @@ export default function LiveGrid() {
         </div>
       </div>
 
+      {/* GPS error */}
+      {geoError && (
+        <div className="absolute bottom-24 right-4 z-[1000] bg-destructive/90 backdrop-blur-xl rounded-xl px-2.5 py-1.5 border border-destructive/50 max-w-[200px]">
+          <p className="text-[10px] text-destructive-foreground">{geoError}</p>
+        </div>
+      )}
+
       {/* GPS indicator */}
-      {myPosition && (
+      {geoPosition && !geoError && (
         <div className="absolute bottom-24 right-4 z-[1000] bg-card/90 backdrop-blur-xl rounded-xl px-2.5 py-1.5 border border-primary/30 flex items-center gap-1.5">
           <Radio className="w-3 h-3 text-primary animate-pulse" />
           <span className="text-[10px] font-medium text-primary">Tracking</span>
