@@ -248,7 +248,7 @@ export default function LiveGrid() {
         zoomControl={false}
         attributionControl={false}
       >
-        <TileLayer url={document.documentElement.classList.contains('light') ? "https://{s}.basemaps.cartocdn.com/positron/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"} />
+        <TileLayer url={document.documentElement.classList.contains('light') ? "https://{s}.basemaps.cartocdn.com/positron/{z}/{x}/{y}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"} />
         <MapAutoCenter rides={rides} />
 
         {/* Meetup pins */}
