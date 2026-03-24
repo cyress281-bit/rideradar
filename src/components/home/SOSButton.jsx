@@ -104,20 +104,67 @@ export default function SOSButton({ user }) {
         onClick={handlePress}
         disabled={sending}
         className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-xs border transition-all ${
-          sent
-            ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
-            : "bg-red-600 border-red-700 text-white shadow-[0_0_14px_rgba(220,38,38,0.6)] hover:bg-red-500 active:scale-95"
+        sent
+          ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+          : "bg-red-600 border-red-700 text-white shadow-[0_0_14px_rgba(220,38,38,0.6)] hover:bg-red-500 active:scale-95"
         }`}
       >
-        {sending ? (
+        {sending || cancelling ? (
           <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+        ) : sent ? (
+          <ShieldOff className="w-3.5 h-3.5" />
         ) : (
           <AlertTriangle className="w-3.5 h-3.5" />
         )}
-        {sent ? "SOS Sent" : "B-DOWN"}
+        {cancelling ? "Removing..." : sent ? "Cancel SOS" : "B-DOWN"}
       </button>
 
-      {/* Confirmation Modal */}
+      {/* Cancel SOS Confirmation */}
+      <AnimatePresence>
+        {confirmCancel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-[3000]"
+              onClick={() => setConfirmCancel(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed inset-x-6 top-1/3 z-[3001] bg-card border border-orange-500/40 rounded-2xl p-5 shadow-2xl"
+            >
+              <button onClick={() => setConfirmCancel(false)} className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                <X className="w-3.5 h-3.5" />
+              </button>
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-orange-500/20 border-2 border-orange-500/40 flex items-center justify-center">
+                  <ShieldOff className="w-7 h-7 text-orange-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-orange-400">Cancel SOS Alert?</h2>
+                  <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                    This will remove your B-DOWN notification and remove you from all active ride integrations.
+                  </p>
+                </div>
+                <button
+                  onClick={handleCancelSOS}
+                  className="w-full py-3 rounded-xl bg-orange-600 text-white font-black text-sm hover:bg-orange-500 transition-colors"
+                >
+                  ✅ I'm OK — Remove Alert
+                </button>
+                <button onClick={() => setConfirmCancel(false)} className="text-xs text-muted-foreground">
+                  Keep alert active
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Send SOS Confirmation Modal */}
       <AnimatePresence>
         {confirming && (
           <>
