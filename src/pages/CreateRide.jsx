@@ -106,7 +106,7 @@ export default function CreateRide() {
     });
 
     toast({ title: "Ride created! It's now on the grid." });
-    navigate(`/rides/${ride.id}`);
+    navigate(`/ride/${ride.id}`);
   };
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
@@ -199,13 +199,14 @@ export default function CreateRide() {
           {rideMode === "schedule" && (
           <div>
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> Start Time
+              <Clock className="w-3.5 h-3.5" /> Date &amp; Time
             </Label>
-            <Input
+            <input
               type="datetime-local"
               value={form.start_time}
+              min={new Date(Date.now() + 5 * 60000).toISOString().slice(0, 16)}
               onChange={(e) => updateField("start_time", e.target.value)}
-              className="bg-secondary border-border"
+              className="w-full h-9 rounded-md border border-input bg-secondary px-3 py-1 text-base text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
             />
           </div>
           )}
