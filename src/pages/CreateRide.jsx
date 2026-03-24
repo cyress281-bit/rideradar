@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ function LocationPicker({ position, setPosition, onMapClick }) {
 
 export default function CreateRide() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -156,6 +158,8 @@ export default function CreateRide() {
       role: "host",
     });
 
+    queryClient.invalidateQueries({ queryKey: ["rides-home"] });
+    queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
     toast({ title: "Ride created! It's now on the grid." });
     navigate(`/ride/${ride.id}`);
   };
