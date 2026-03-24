@@ -335,6 +335,22 @@ export default function Profile() {
             <Button variant="ghost" className="w-full text-muted-foreground hover:text-foreground" onClick={() => base44.auth.logout()}>
               <LogOut className="w-4 h-4 mr-2" /> Sign Out
             </Button>
+
+            <div className="border-t border-border/50 pt-4">
+              <Button
+                variant="ghost"
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={async () => {
+                  if (!window.confirm("Delete your account? This cannot be undone.")) return;
+                  const secondConfirm = window.prompt('Type "DELETE" to confirm');
+                  if (secondConfirm !== "DELETE") return;
+                  await base44.auth.updateMe({ account_deleted: true, username: "[deleted]" });
+                  base44.auth.logout();
+                }}
+              >
+                <UserX className="w-4 h-4 mr-2" /> Delete Account
+              </Button>
+            </div>
           </div>
         )}
       </div>
