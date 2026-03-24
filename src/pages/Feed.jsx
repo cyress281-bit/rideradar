@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import PullToRefresh from "@/components/ui/PullToRefresh";
 import { PlusCircle, Route, Camera, Wrench, SlidersHorizontal } from "lucide-react";
 import FeedPostCard from "@/components/feed/FeedPostCard";
 import CreatePostModal from "@/components/feed/CreatePostModal";
@@ -39,6 +40,10 @@ export default function Feed() {
 
   const filtered = filter === "all" ? posts : posts.filter((p) => p.post_type === filter);
 
+  const handleRefresh = async () => {
+    await qc.invalidateQueries({ queryKey: ["feed-posts"] });
+  };
+
   return (
     <div className="min-h-screen pb-28">
       {/* Header */}
@@ -73,31 +78,33 @@ export default function Feed() {
       </div>
 
       {/* Posts */}
-      <div className="px-4 pt-4 space-y-4">
-        {isLoading && (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-          </div>
-        )}
-
-        {!isLoading && filtered.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-16 text-center"
-          >
-            <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-3">
-              <SlidersHorizontal className="w-7 h-7 text-muted-foreground/50" />
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="px-4 pt-4 space-y-4">
+          {isLoading && (
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
             </div>
-            <p className="text-sm font-semibold text-muted-foreground">No posts yet</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Be the first to share a ride or photo!</p>
-          </motion.div>
-        )}
+          )}
 
-        {filtered.map((post) => (
-          <FeedPostCard key={post.id} post={post} currentUser={user} />
-        ))}
-      </div>
+          {!isLoading && filtered.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-16 text-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mb-3">
+                <SlidersHorizontal className="w-7 h-7 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-semibold text-muted-foreground">No posts yet</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Be the first to share a ride or photo!</p>
+            </motion.div>
+          )}
+
+          {filtered.map((post) => (
+            <FeedPostCard key={post.id} post={post} currentUser={user} />
+          ))}
+        </div>
+      </PullToRefresh>
 
       {showCreate && user && (
         <CreatePostModal user={user} onClose={() => setShowCreate(false)} />

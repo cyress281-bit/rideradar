@@ -87,7 +87,11 @@
   body {
     -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
-    @apply bg-background text-foreground font-inter;
+  }
+
+  button, a, nav, [role="tab"], [role="tablist"] {
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 

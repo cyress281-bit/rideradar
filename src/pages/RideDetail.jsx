@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import BackButton from "@/components/ui/BackButton";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Users, MapPin, Clock, Bike, X } from "lucide-react";
@@ -70,12 +71,7 @@ export default function RideDetail() {
     return (
       <div className="min-h-screen pb-28">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-          <button
-            onClick={() => navigate("/")}
-            className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
+          <BackButton />
         </div>
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground">Loading...</p>
