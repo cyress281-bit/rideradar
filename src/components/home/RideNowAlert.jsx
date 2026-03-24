@@ -88,29 +88,60 @@ export default function RideNowAlert({ user }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ type: "spring", damping: 24, stiffness: 280 }}
-            className="pointer-events-auto bg-card/98 backdrop-blur-2xl border border-primary/40 rounded-2xl shadow-2xl overflow-hidden"
+            className={`pointer-events-auto backdrop-blur-2xl rounded-2xl shadow-2xl overflow-hidden border ${
+              alert.isSOS
+                ? "bg-red-950/95 border-red-500/60"
+                : "bg-card/98 border-primary/40"
+            }`}
           >
-            <div className="h-1 w-full bg-gradient-to-r from-primary to-green-400" />
+            <div className={`h-1 w-full bg-gradient-to-r ${
+              alert.isSOS ? "from-red-500 to-orange-400" : "from-primary to-green-400"
+            }`} />
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5 text-primary" />
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                alert.isSOS ? "bg-red-500/20" : "bg-primary/15"
+              }`}>
+                {alert.isSOS
+                  ? <AlertTriangle className="w-5 h-5 text-red-400" />
+                  : <Zap className="w-5 h-5 text-primary" />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-foreground leading-snug">
-                  Ride starting {alert.distLabel} — Join?
-                </p>
-                <p className="text-[10px] text-muted-foreground truncate">
-                  <span className="text-primary font-semibold">@{alert.host_username}</span> · {alert.ride_title}
-                </p>
+                {alert.isSOS ? (
+                  <>
+                    <p className="text-xs font-black text-red-400 leading-snug">🚨 BIKER DOWN — {alert.distLabel}</p>
+                    <p className="text-[10px] text-red-300/80 truncate">@{alert.host_username} needs assistance!</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-foreground leading-snug">
+                      Ride starting {alert.distLabel} — Join?
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      <span className="text-primary font-semibold">@{alert.host_username}</span> · {alert.ride_title}
+                    </p>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                <Link
-                  to={`/rides/${alert.ride_id}`}
-                  onClick={() => dismiss(alert.alertId)}
-                  className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  View
-                </Link>
+                {alert.isSOS && alert.meetup_lat && alert.meetup_lng ? (
+                  <a
+                    href={`https://maps.google.com/?q=${alert.meetup_lat},${alert.meetup_lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => dismiss(alert.alertId)}
+                    className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors"
+                  >
+                    📍 Map
+                  </a>
+                ) : !alert.isSOS ? (
+                  <Link
+                    to={`/ride/${alert.ride_id}`}
+                    onClick={() => dismiss(alert.alertId)}
+                    className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    View
+                  </Link>
+                ) : null}
                 <button
                   onClick={() => dismiss(alert.alertId)}
                   className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
