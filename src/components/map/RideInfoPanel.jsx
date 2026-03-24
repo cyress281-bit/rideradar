@@ -63,6 +63,14 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
       {/* Top accent */}
       <div className={`h-1 w-full ${ride.status === "active" ? "bg-primary" : "bg-blue-500"}`} />
 
+      {/* Close button — always visible */}
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+
       {/* Tabs */}
       <div className="flex border-b border-border">
         <button
@@ -89,13 +97,6 @@ export default function RideInfoPanel({ ride, participants, riderLocations, user
        </div>
       ) : (
       <div className="p-4">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-7 h-7 rounded-full bg-secondary/80 flex items-center justify-center hover:bg-secondary transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-
         {/* Status + Title */}
         <div className="flex items-center gap-2 mb-0.5 pr-8">
           {ride.status === "active" ? (
