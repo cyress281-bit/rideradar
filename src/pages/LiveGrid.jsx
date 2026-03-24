@@ -11,6 +11,7 @@ import ActiveRidePin from "@/components/map/ActiveRidePin";
 import RideInfoPanel from "@/components/map/RideInfoPanel";
 import RideRoutePolyline from "@/components/map/RideRoutePolyline";
 import HostLocationPin from "@/components/map/HostLocationPin";
+import SOSPin from "@/components/map/SOSPin";
 
 const CHECK_IN_RADIUS_METERS = 300;
 const LOCATION_UPDATE_INTERVAL = 8000;
@@ -206,6 +207,19 @@ export default function LiveGrid() {
     enabled: true,
   });
 
+  // Fetch active SOS notifications (biker down)
+  const { data: sosAlerts = [] } = useQuery({
+    queryKey: ["sos-alerts-grid"],
+    queryFn: async () => {
+      const all = await base44.entities.RideNotification.filter({ ride_id: "sos" }, "-created_date", 20);
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      return all.filter((n) => new Date(n.created_date).getTime() > cutoff);
+    },
+    refetchInterval: 15000,
+  });
+
+  const [selectedSOS, setSelectedSOS] = useState(null);
+
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
 
@@ -270,6 +284,15 @@ export default function LiveGrid() {
               />
             ))
         )}
+
+        {/* B-DOWN / SOS pins — always on top */}
+        {sosAlerts.map((alert) => (
+          <SOSPin
+            key={alert.id}
+            notification={alert}
+            onClick={setSelectedSOS}
+          />
+        ))}
       </MapContainer>
 
       {/* HUD Top Bar */}
