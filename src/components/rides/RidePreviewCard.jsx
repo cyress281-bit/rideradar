@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Users, Clock, MapPin, UserPlus, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { base44 } from "@/api/base44Client";
 
@@ -36,7 +36,7 @@ const vibeEmoji = {
 export default function RidePreviewCard({ ride, index = 0, user }) {
   const queryClient = useQueryClient();
   const [joined, setJoined] = useState(false);
-  const [joining, setJoining] = useState(false);
+  const joining = false; // kept for button disabled logic; optimistic handles UI
   const [isHost, setIsHost] = useState(false);
   const [countdown, setCountdown] = useState("");
 
