@@ -189,7 +189,7 @@ export default function CreateRide() {
               zoomControl={false}
               attributionControl={false}
             >
-              <TileLayer url={document.documentElement.classList.contains('light') ? "https://{s}.basemaps.cartocdn.com/positron/{z}/{x}/{y}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"} />
+              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' url={document.documentElement.classList.contains('light') ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png" : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"} />
               <MapPanner position={position} />
               <LocationPicker position={position} setPosition={setPosition} onMapClick={reverseGeocode} />
             </MapContainer>
