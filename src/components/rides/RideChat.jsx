@@ -55,7 +55,6 @@ export default function RideChat({ rideId, user, canChat, isHost, rideStatus }) 
   useEffect(() => {
     if (rideStatus !== "active" && sharingLocation) {
       setSharingLocation(false);
-      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
     }
   }, [rideStatus, sharingLocation]);
 
@@ -118,6 +117,7 @@ export default function RideChat({ rideId, user, canChat, isHost, rideStatus }) 
     setUploadingPhoto(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     await sendMessage({ text: "📷 Photo", photo_url: file_url, tag: "chat" });
+    setText("");
     setUploadingPhoto(false);
     e.target.value = "";
   };

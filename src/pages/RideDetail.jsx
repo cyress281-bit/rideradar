@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import BackButton from "@/components/ui/BackButton";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Users, MapPin, Clock, Bike, X } from "lucide-react";
+import { Users, MapPin, Clock, Bike, X, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import RideChat from "@/components/rides/RideChat";
