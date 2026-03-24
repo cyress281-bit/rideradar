@@ -96,7 +96,7 @@ export default function FeedPostCard({ post, currentUser }) {
           <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
             <Icon className="w-3 h-3" />{cfg.label}
           </span>
-          {currentUser?.email === post.user_email && (
+          {(currentUser?.email === post.user_email || currentUser?.role === "admin") && (
             <button onClick={() => deletePost.mutate()} className="text-muted-foreground hover:text-destructive transition-colors">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
