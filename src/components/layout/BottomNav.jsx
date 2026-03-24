@@ -1,13 +1,14 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Map, User, MessageSquare } from "lucide-react";
+import { Home, Map, User, MessageSquare, Rss } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Home" },
-  { path: "/grid", icon: Map, label: "Radar" },
-  { path: "/messages", icon: MessageSquare, label: "Messages" },
-  { path: "/profile", icon: User, label: "Profile" },
+  { path: "/",        icon: Home,           label: "Home" },
+  { path: "/grid",    icon: Map,            label: "Radar" },
+  { path: "/feed",    icon: Rss,            label: "Feed" },
+  { path: "/messages",icon: MessageSquare,  label: "Messages" },
+  { path: "/profile", icon: User,           label: "Profile" },
 ];
 
 export default function BottomNav() {
