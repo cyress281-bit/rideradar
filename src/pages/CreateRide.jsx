@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, MapPin, Clock, Sparkles, Zap, CalendarClock } from "lucide-react";
+import DateTimePicker from "@/components/ui/DateTimePicker";
 import { useToast } from "@/components/ui/use-toast";
 
 const pinIcon = L.divIcon({
@@ -260,14 +261,12 @@ export default function CreateRide() {
           {rideMode === "schedule" && (
           <div>
             <Label className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> Date &amp; Time
+              <CalendarClock className="w-3.5 h-3.5" /> Date &amp; Time
             </Label>
-            <input
-              type="datetime-local"
+            <DateTimePicker
               value={form.start_time}
-              min={new Date(Date.now() + 5 * 60000).toISOString().slice(0, 16)}
-              onChange={(e) => updateField("start_time", e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-secondary px-3 py-1 text-base text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+              onChange={(v) => updateField("start_time", v)}
+              minDate={new Date(Date.now() + 5 * 60000)}
             />
           </div>
           )}
