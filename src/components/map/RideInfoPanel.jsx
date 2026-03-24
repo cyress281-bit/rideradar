@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { X, Clock, Users, Bike, MapPin, UserPlus, Check, MessageSquare, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +18,7 @@ const vibeColors = {
 };
 
 export default function RideInfoPanel({ ride, participants, riderLocations, user, onClose }) {
+  const queryClient = useQueryClient();
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
