@@ -15,13 +15,10 @@ export default function AppLayout() {
   const location = useLocation();
   useBackButton();
 
-  // Determine direction: detail pages slide in from right, tab switches cross-fade
-  const isTabRoot = ["/", "/grid", "/feed", "/messages", "/profile"].includes(location.pathname);
-
   return (
-    <div className="h-screen bg-background font-inter flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+    <div className="w-screen h-screen bg-background font-inter flex flex-col overflow-hidden" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       <RideNowAlert user={user} />
-      <main className="flex-1 overflow-y-auto pb-24 w-full">
+      <main className="flex-1 overflow-y-auto w-full">
         <Outlet />
       </main>
       <BottomNav />
