@@ -97,6 +97,14 @@
 ::-webkit-scrollbar {
   width: 4px;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 ::-webkit-scrollbar-track {
   background: transparent;
 }
