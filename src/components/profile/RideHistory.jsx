@@ -73,7 +73,7 @@ export default function RideHistory({ userEmail }) {
 
       {/* Recent rides */}
       <div className="space-y-2">
-        {rides.slice(0, 5).map((ride, idx) => (
+        {visibleRides.slice(0, 5).map((ride, idx) => (
           <motion.div
             key={ride.id}
             initial={{ opacity: 0, x: -10 }}
