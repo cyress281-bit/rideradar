@@ -61,7 +61,7 @@ export default function RideNowAlert({ user }) {
       }
 
       const alert = { ...notif, distLabel, alertId: notif.id, isSOS };
-      setAlerts((prev) => [alert, ...prev].slice(0, 3));
+      setAlerts([alert]);
 
       // SOS stays longer
       const timeout = isSOS ? 30000 : 12000;
