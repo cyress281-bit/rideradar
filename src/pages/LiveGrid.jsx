@@ -312,6 +312,12 @@ export default function LiveGrid() {
               <div className="w-2.5 h-2.5 rounded-full bg-primary" />
               <span className="text-muted-foreground">Live</span>
             </div>
+            {sosAlerts.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <span className="text-red-400 font-bold">B-DOWN</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -370,6 +376,44 @@ export default function LiveGrid() {
             user={user}
             onClose={() => setSelectedRide(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* SOS detail popup */}
+      <AnimatePresence>
+        {selectedSOS && (
+          <motion.div
+            initial={{ y: 200, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 200, opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="absolute bottom-20 left-3 right-3 z-[1000] bg-red-950/97 backdrop-blur-2xl rounded-2xl border border-red-500/50 shadow-2xl overflow-hidden"
+          >
+            <div className="h-1 w-full bg-gradient-to-r from-red-500 to-orange-400" />
+            <div className="p-4">
+              <button
+                onClick={() => setSelectedSOS(null)}
+                className="absolute top-4 right-4 w-7 h-7 rounded-full bg-red-900/60 flex items-center justify-center hover:bg-red-900 transition-colors"
+              >
+                <span className="text-xs text-red-200 font-bold">✕</span>
+              </button>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">🚨</span>
+                <h3 className="font-black text-red-400 text-base">BIKER DOWN</h3>
+              </div>
+              <p className="text-xs text-red-300/80 mb-3">@{selectedSOS.host_username} has triggered an emergency alert</p>
+              {selectedSOS.meetup_lat && selectedSOS.meetup_lng && (
+                <a
+                  href={`https://maps.google.com/?q=${selectedSOS.meetup_lat},${selectedSOS.meetup_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-colors"
+                >
+                  📍 Open Location in Maps
+                </a>
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
