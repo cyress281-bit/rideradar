@@ -58,25 +58,35 @@ export default function DateTimePicker({ value, onChange, minDate }) {
   const years = [currentYear, currentYear + 1];
   const allMonths = Array.from({ length: 12 }, (_, i) => i);
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const hours12 = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  const ampmOptions = ["AM", "PM"];
 
   const [month, setMonth] = React.useState(parsed ? parsed.getMonth() : now.getMonth());
   const [day, setDay] = React.useState(parsed ? parsed.getDate() : now.getDate());
   const [year, setYear] = React.useState(parsed ? parsed.getFullYear() : currentYear);
-  const [hour, setHour] = React.useState(parsed ? parsed.getHours() : now.getHours());
+  const initHour24 = parsed ? parsed.getHours() : now.getHours();
+  const [hour, setHour] = React.useState(initHour24 % 12 === 0 ? 12 : initHour24 % 12);
+  const [ampm, setAmpm] = React.useState(initHour24 >= 12 ? "PM" : "AM");
   const [minute, setMinute] = React.useState(parsed ? Math.ceil(parsed.getMinutes() / 5) * 5 % 60 : Math.ceil(now.getMinutes() / 5) * 5 % 60);
 
-  const emit = (m, d, y, h, min) => {
-    const str = `${y}-${pad(m + 1)}-${pad(d)}T${pad(h)}:${pad(min)}`;
+  const to24 = (h12, ap) => {
+    if (ap === "AM") return h12 === 12 ? 0 : h12;
+    return h12 === 12 ? 12 : h12 + 12;
+  };
+
+  const emit = (m, d, y, h12, ap, min) => {
+    const h24 = to24(h12, ap);
+    const str = `${y}-${pad(m + 1)}-${pad(d)}T${pad(h24)}:${pad(min)}`;
     onChange?.(str);
   };
 
-  const handleMonth = (v) => { setMonth(v); emit(v, day, year, hour, minute); };
-  const handleDay = (v) => { setDay(v); emit(month, v, year, hour, minute); };
-  const handleYear = (v) => { setYear(v); emit(month, day, v, hour, minute); };
-  const handleHour = (v) => { setHour(v); emit(month, day, year, v, minute); };
-  const handleMinute = (v) => { setMinute(v); emit(month, day, year, hour, v); };
+  const handleMonth = (v) => { setMonth(v); emit(v, day, year, hour, ampm, minute); };
+  const handleDay = (v) => { setDay(v); emit(month, v, year, hour, ampm, minute); };
+  const handleYear = (v) => { setYear(v); emit(month, day, v, hour, ampm, minute); };
+  const handleHour = (v) => { setHour(v); emit(month, day, year, v, ampm, minute); };
+  const handleAmpm = (v) => { setAmpm(v); emit(month, day, year, hour, v, minute); };
+  const handleMinute = (v) => { setMinute(v); emit(month, day, year, hour, ampm, v); };
 
   return (
     <div className="space-y-3">
@@ -103,12 +113,14 @@ export default function DateTimePicker({ value, onChange, minDate }) {
         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
           <Clock className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time</span>
-          <span className="ml-auto text-xs font-bold text-primary">{pad(hour)}:{pad(minute)}</span>
+          <span className="ml-auto text-xs font-bold text-primary">{pad(hour)}:{pad(minute)} {ampm}</span>
         </div>
         <div className="flex gap-1 px-3 py-2">
-          <ScrollColumn items={hours} selected={hour} onSelect={handleHour} />
+          <ScrollColumn items={hours12} selected={hour} onSelect={handleHour} />
           <div className="flex items-center justify-center text-lg font-black text-primary/40 px-1">:</div>
           <ScrollColumn items={minutes} selected={minute} onSelect={handleMinute} />
+          <div className="w-px bg-border self-stretch my-2" />
+          <ScrollColumn items={ampmOptions} selected={ampm} onSelect={handleAmpm} renderItem={(v) => v} />
         </div>
       </div>
     </div>
