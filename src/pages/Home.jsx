@@ -35,9 +35,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <>
       <HomeHeader username={user?.username} user={user} />
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto w-full">
         <PullToRefresh onRefresh={handleRefresh}>
         <StatsBar
           totalRiders={totalRiders}
