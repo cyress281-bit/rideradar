@@ -129,14 +129,27 @@
 }
 
 /* Leaflet overrides for dark theme */
-.leaflet-container {
+.dark .leaflet-container {
   background: hsl(220 15% 6%) !important;
 }
-.leaflet-tile-pane {
+.dark .leaflet-tile-pane {
   filter: brightness(0.7) contrast(1.1) saturate(0.8);
 }
-.leaflet-control-zoom a {
+.dark .leaflet-control-zoom a {
   background: hsl(220 15% 12%) !important;
   color: hsl(0 0% 90%) !important;
   border-color: hsl(220 15% 18%) !important;
+}
+
+/* Leaflet overrides for light theme */
+.light .leaflet-container {
+  background: hsl(0 0% 99%) !important;
+}
+.light .leaflet-tile-pane {
+  filter: brightness(1.1) contrast(1) saturate(1.05);
+}
+.light .leaflet-control-zoom a {
+  background: hsl(0 0% 100%) !important;
+  color: hsl(220 15% 5%) !important;
+  border-color: hsl(220 10% 80%) !important;
 }
