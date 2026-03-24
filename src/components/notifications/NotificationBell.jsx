@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,7 +10,7 @@ export default function NotificationBell({ user }) {
   const ref = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: notifications = [] } = useQuery({
+  const { data: myNotifs = [] } = useQuery({
     queryKey: ["notifications", user?.email],
     queryFn: () =>
       base44.entities.RideNotification.filter(
@@ -22,10 +22,33 @@ export default function NotificationBell({ user }) {
     refetchInterval: 15000,
   });
 
+  const { data: sosNotifs = [] } = useQuery({
+    queryKey: ["sos-notifications"],
+    queryFn: () =>
+      base44.entities.RideNotification.filter(
+        { ride_id: "sos" },
+        "-created_date",
+        20
+      ),
+    enabled: !!user?.email,
+    refetchInterval: 15000,
+  });
+
+  // Merge: personal notifs + SOS alerts from last 24h (not sent by self)
+  const cutoff24h = Date.now() - 24 * 60 * 60 * 1000;
+  const selfUsername = user?.username || user?.email?.split("@")[0];
+  const filteredSOS = sosNotifs.filter(
+    (n) => new Date(n.created_date).getTime() > cutoff24h && n.host_username !== selfUsername
+  );
+  const notifications = [...myNotifs, ...filteredSOS]
+    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+    .filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i);
+
   // Real-time subscription
   useEffect(() => {
     const unsub = base44.entities.RideNotification.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["notifications", user?.email] });
+      queryClient.invalidateQueries({ queryKey: ["sos-notifications"] });
     });
     return unsub;
   }, [user?.email, queryClient]);
@@ -88,26 +111,41 @@ export default function NotificationBell({ user }) {
                   <p className="text-xs text-muted-foreground">No notifications yet</p>
                 </div>
               ) : (
-                notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`px-4 py-3 border-b border-border/50 last:border-0 transition-colors ${
-                      !n.read ? "bg-primary/5" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {!n.read && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                      )}
-                      <div className={!n.read ? "" : "ml-3.5"}>
-                        <p className="text-xs leading-snug text-foreground">{n.message}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {formatDistanceToNow(new Date(n.created_date), { addSuffix: true })}
-                        </p>
+                notifications.map((n) => {
+                  const isSOS = n.ride_id === "sos";
+                  return (
+                    <div
+                      key={n.id}
+                      className={`px-4 py-3 border-b border-border/50 last:border-0 transition-colors ${
+                        isSOS ? "bg-red-950/40" : !n.read ? "bg-primary/5" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {isSOS ? (
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                        ) : !n.read ? (
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                        ) : null}
+                        <div className={!isSOS && !n.read ? "" : isSOS ? "" : "ml-3.5"}>
+                          <p className={`text-xs leading-snug ${isSOS ? "text-red-300 font-semibold" : "text-foreground"}`}>{n.message}</p>
+                          {isSOS && n.meetup_lat && n.meetup_lng && (
+                            <a
+                              href={`https://maps.google.com/?q=${n.meetup_lat},${n.meetup_lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-red-400 underline mt-0.5 inline-block"
+                            >
+                              📍 Open in Maps
+                            </a>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {formatDistanceToNow(new Date(n.created_date), { addSuffix: true })}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </motion.div>
