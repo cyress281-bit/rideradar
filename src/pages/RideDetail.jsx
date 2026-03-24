@@ -6,6 +6,7 @@ import { ArrowLeft, Users, MapPin, Clock, Bike, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import RideChat from "@/components/rides/RideChat";
+import HostControls from "@/components/rides/HostControls";
 
 const vibeColors = {
   chill: "bg-blue-500/15 text-blue-400 border-blue-500/20",
@@ -183,8 +184,11 @@ export default function RideDetail() {
         )}
 
         {isHost && (
-          <div className="w-full text-sm font-bold px-4 py-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-center">
-            👑 You're the Host
+          <div className="space-y-2">
+            <div className="w-full text-sm font-bold px-4 py-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-center">
+              👑 You're the Host
+            </div>
+            <HostControls ride={ride} rideId={rideId} />
           </div>
         )}
       </div>
