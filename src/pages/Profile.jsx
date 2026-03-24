@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Loader, Star, Route, Eye, EyeOff, Save, LogOut, UserX, Settings, Grid3X3, Bike } from "lucide-react";
+import { Camera, Loader, Route, Eye, EyeOff, Save, LogOut, UserX, Settings, Grid3X3, Bike, Pencil, X, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
 import MotorcycleModels from "@/components/profile/MotorcycleModels";
@@ -25,9 +25,10 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("garage");
+  const [editingProfile, setEditingProfile] = useState(false);
   const [form, setForm] = useState({
     username: "", bio: "", profile_pic_url: "", bike_make: "", bike_model: "",
-    bike_year: "", bike_class: "", motorcycle_models: [], ride_preferences: [], invisible_mode: false, sos_notifications: true,
+    bike_year: "", bike_class: "", motorcycle_models: [], invisible_mode: false, sos_notifications: true,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -96,7 +97,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen pb-28">
-      {/* TikTok-style profile header */}
+      {/* Profile Header */}
       <div className="flex flex-col items-center pt-8 pb-5 px-5">
         {/* Avatar */}
         <motion.label
@@ -126,38 +127,103 @@ export default function Profile() {
           <input type="file" accept="image/*" onChange={handlePicUpload} disabled={uploading} className="hidden" />
         </motion.label>
 
-        {/* Username */}
-        <h2 className="text-lg font-bold">@{form.username || "anonymous"}</h2>
-
-        {/* Bike badge */}
-        {(form.bike_make || form.bike_model) && (
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-            <Bike className="w-3.5 h-3.5" />
-            <span>{[form.bike_year, form.bike_make, form.bike_model].filter(Boolean).join(" ")}</span>
+        {!editingProfile ? (
+          /* Read-only view */
+          <div className="flex flex-col items-center w-full">
+            <h2 className="text-lg font-bold">@{form.username || "anonymous"}</h2>
+            {(form.bike_make || form.bike_model) && (
+              <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                <Bike className="w-3.5 h-3.5" />
+                <span>{[form.bike_year, form.bike_make, form.bike_model].filter(Boolean).join(" ")}</span>
+              </div>
+            )}
+            {form.bio && (
+              <p className="text-sm text-center text-muted-foreground mt-2 max-w-xs leading-snug">{form.bio}</p>
+            )}
+            {/* Stats row */}
+            <div className="flex items-center gap-8 mt-4">
+              <div className="text-center">
+                <p className="text-base font-bold">{user?.total_rides || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Rides</p>
+              </div>
+              <div className="text-center">
+                <p className="text-base font-bold">{user?.friends_count || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Friends</p>
+              </div>
+              <div className="text-center">
+                <p className="text-base font-bold">{user?.likes_count || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Likes</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setEditingProfile(true)}
+              className="mt-4 flex items-center gap-1.5 px-5 py-2 rounded-lg border border-border bg-secondary/50 text-xs font-semibold hover:bg-secondary transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit Profile
+            </button>
+          </div>
+        ) : (
+          /* Inline edit form */
+          <div className="w-full space-y-3 mt-2">
+            {/* Username */}
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 block">Username</Label>
+              <Input value={form.username} onChange={(e) => updateField("username", e.target.value)} className="bg-secondary border-border" placeholder="Choose a username" />
+            </div>
+            {/* Bio */}
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 block">Bio</Label>
+              <textarea
+                value={form.bio}
+                onChange={(e) => updateField("bio", e.target.value)}
+                placeholder="Tell riders about yourself..."
+                maxLength={150}
+                rows={2}
+                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+              <p className="text-[10px] text-muted-foreground text-right -mt-0.5">{form.bio.length}/150</p>
+            </div>
+            {/* Primary Bike */}
+            <div>
+              <Label className="text-[10px] text-muted-foreground mb-1 block">Primary Bike</Label>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
+                <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
+                <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
+              </div>
+              <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Bike class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sportbike">Sportbike</SelectItem>
+                  <SelectItem value="cruiser">Cruiser</SelectItem>
+                  <SelectItem value="adventure">Adventure</SelectItem>
+                  <SelectItem value="naked">Naked</SelectItem>
+                  <SelectItem value="touring">Touring</SelectItem>
+                  <SelectItem value="dual_sport">Dual Sport</SelectItem>
+                  <SelectItem value="scooter">Scooter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Motorcycle models */}
+            <MotorcycleModels models={form.motorcycle_models} onUpdate={(models) => updateField("motorcycle_models", models)} />
+            {/* Save / Cancel */}
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={() => { saveMutation.mutate(); setEditingProfile(false); }}
+                disabled={saveMutation.isPending}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl"
+              >
+                <Check className="w-4 h-4 mr-1" />
+                {saveMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+              <Button variant="outline" onClick={() => setEditingProfile(false)} className="flex-1 rounded-xl">
+                <X className="w-4 h-4 mr-1" /> Cancel
+              </Button>
+            </div>
           </div>
         )}
-
-        {/* Bio */}
-        {form.bio && (
-          <p className="text-sm text-center text-muted-foreground mt-2 max-w-xs leading-snug">{form.bio}</p>
-        )}
-
-        {/* Stats row */}
-        <div className="flex items-center gap-8 mt-4">
-          <div className="text-center">
-            <p className="text-base font-bold">{user?.total_rides || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Rides</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-bold">{user?.friends_count || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Friends</p>
-          </div>
-          <div className="text-center">
-            <p className="text-base font-bold">{user?.likes_count || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Likes</p>
-          </div>
-        </div>
-
       </div>
 
       {/* Tabs */}
@@ -194,54 +260,6 @@ export default function Profile() {
 
         {activeTab === "settings" && (
           <div className="space-y-5">
-            {/* Username */}
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Username</Label>
-              <Input value={form.username} onChange={(e) => updateField("username", e.target.value)} className="bg-secondary border-border" placeholder="Choose a username" />
-            </div>
-
-            {/* Bio */}
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Bio</Label>
-              <textarea
-                value={form.bio}
-                onChange={(e) => updateField("bio", e.target.value)}
-                placeholder="Tell riders about yourself..."
-                maxLength={150}
-                rows={3}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              />
-              <p className="text-[10px] text-muted-foreground text-right mt-0.5">{form.bio.length}/150</p>
-            </div>
-
-            {/* Primary Bike */}
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Primary Bike</Label>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                <Input value={form.bike_make} onChange={(e) => updateField("bike_make", e.target.value)} placeholder="Make" className="bg-secondary border-border" />
-                <Input value={form.bike_model} onChange={(e) => updateField("bike_model", e.target.value)} placeholder="Model" className="bg-secondary border-border" />
-                <Input value={form.bike_year} onChange={(e) => updateField("bike_year", e.target.value)} placeholder="Year" className="bg-secondary border-border" type="number" />
-              </div>
-              <Select value={form.bike_class} onValueChange={(v) => updateField("bike_class", v)}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder="Bike class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sportbike">Sportbike</SelectItem>
-                  <SelectItem value="cruiser">Cruiser</SelectItem>
-                  <SelectItem value="adventure">Adventure</SelectItem>
-                  <SelectItem value="naked">Naked</SelectItem>
-                  <SelectItem value="touring">Touring</SelectItem>
-                  <SelectItem value="dual_sport">Dual Sport</SelectItem>
-                  <SelectItem value="scooter">Scooter</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Motorcycle models */}
-            <MotorcycleModels models={form.motorcycle_models} onUpdate={(models) => updateField("motorcycle_models", models)} />
-
-
             {/* Privacy */}
             <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
               <div className="flex items-center justify-between">
