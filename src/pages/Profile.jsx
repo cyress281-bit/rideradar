@@ -35,7 +35,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState("garage");
   const [form, setForm] = useState({
     username: "", bio: "", profile_pic_url: "", bike_make: "", bike_model: "",
-    bike_year: "", bike_class: "", motorcycle_models: [], ride_preferences: [], invisible_mode: false,
+    bike_year: "", bike_class: "", motorcycle_models: [], ride_preferences: [], invisible_mode: false, sos_notifications: true,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -53,6 +53,7 @@ export default function Profile() {
         motorcycle_models: u.motorcycle_models || [],
         ride_preferences: u.ride_preferences || [],
         invisible_mode: u.invisible_mode || false,
+        sos_notifications: u.sos_notifications !== false,
       });
     }).catch(() => {});
   }, []);
@@ -93,6 +94,7 @@ export default function Profile() {
         motorcycle_models: form.motorcycle_models,
         ride_preferences: form.ride_preferences,
         invisible_mode: form.invisible_mode,
+        sos_notifications: form.sos_notifications,
       });
     },
     onSuccess: () => toast({ title: "Profile saved!" }),
@@ -302,6 +304,20 @@ export default function Profile() {
                   </div>
                 </div>
                 <Switch checked={form.invisible_mode} onCheckedChange={(v) => updateField("invisible_mode", v)} />
+              </div>
+            </div>
+
+            {/* SOS Notifications */}
+            <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">🚨</span>
+                  <div>
+                    <p className="text-sm font-medium">B-DOWN Alerts</p>
+                    <p className="text-[11px] text-muted-foreground">Receive SOS emergency alerts from nearby riders</p>
+                  </div>
+                </div>
+                <Switch checked={form.sos_notifications} onCheckedChange={(v) => updateField("sos_notifications", v)} />
               </div>
             </div>
 
