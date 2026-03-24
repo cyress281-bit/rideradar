@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Users, Clock, MapPin, UserPlus, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { base44 } from "@/api/base44Client";
 
@@ -33,6 +34,7 @@ const vibeEmoji = {
 };
 
 export default function RidePreviewCard({ ride, index = 0, user }) {
+  const queryClient = useQueryClient();
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [isHost, setIsHost] = useState(false);
@@ -86,6 +88,9 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
       role: "rider",
     });
     await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
+    queryClient.invalidateQueries({ queryKey: ["rides-home"] });
+    queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
+    queryClient.invalidateQueries({ queryKey: ["ride-participants", ride.id] });
     setJoined(true);
     setJoining(false);
   };
