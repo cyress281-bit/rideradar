@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { CalendarDays, Clock } from "lucide-react";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -62,6 +62,9 @@ export default function DateTimePicker({ value, onChange, minDate }) {
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
   const ampmOptions = ["AM", "PM"];
 
+  const [dateOpen, setDateOpen] = useState(!parsed);
+  const [timeOpen, setTimeOpen] = useState(!parsed);
+
   const [month, setMonth] = React.useState(parsed ? parsed.getMonth() : now.getMonth());
   const [day, setDay] = React.useState(parsed ? parsed.getDate() : now.getDate());
   const [year, setYear] = React.useState(parsed ? parsed.getFullYear() : currentYear);
@@ -83,45 +86,47 @@ export default function DateTimePicker({ value, onChange, minDate }) {
 
   const handleMonth = (v) => { setMonth(v); emit(v, day, year, hour, ampm, minute); };
   const handleDay = (v) => { setDay(v); emit(month, v, year, hour, ampm, minute); };
-  const handleYear = (v) => { setYear(v); emit(month, day, v, hour, ampm, minute); };
+  const handleYear = (v) => { setYear(v); emit(month, day, v, hour, ampm, minute); setDateOpen(false); };
   const handleHour = (v) => { setHour(v); emit(month, day, year, v, ampm, minute); };
-  const handleAmpm = (v) => { setAmpm(v); emit(month, day, year, hour, v, minute); };
+  const handleAmpm = (v) => { setAmpm(v); emit(month, day, year, hour, v, minute); setTimeOpen(false); };
   const handleMinute = (v) => { setMinute(v); emit(month, day, year, hour, ampm, v); };
 
   return (
     <div className="space-y-3">
       {/* Date box */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+        <button type="button" onClick={() => setDateOpen(o => !o)} className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-border hover:bg-secondary/30 transition-colors">
           <CalendarDays className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Date</span>
           <span className="ml-auto text-xs font-bold text-primary">
             {MONTHS[month]} {pad(day)}, {year}
           </span>
-        </div>
-        <div className="flex gap-1 px-3 py-2">
+          <span className="text-muted-foreground text-xs">{dateOpen ? "▲" : "▼"}</span>
+        </button>
+        {dateOpen && <div className="flex gap-1 px-3 py-2">
           <ScrollColumn items={allMonths} selected={month} onSelect={handleMonth} renderItem={(m) => MONTHS[m]} />
           <div className="w-px bg-border self-stretch my-2" />
           <ScrollColumn items={days} selected={day} onSelect={handleDay} />
           <div className="w-px bg-border self-stretch my-2" />
           <ScrollColumn items={years} selected={year} onSelect={handleYear} renderItem={(y) => String(y)} />
-        </div>
+        </div>}
       </div>
 
       {/* Time box */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+        <button type="button" onClick={() => setTimeOpen(o => !o)} className="w-full flex items-center gap-2 px-4 py-2.5 border-b border-border hover:bg-secondary/30 transition-colors">
           <Clock className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time</span>
           <span className="ml-auto text-xs font-bold text-primary">{pad(hour)}:{pad(minute)} {ampm}</span>
-        </div>
-        <div className="flex gap-1 px-3 py-2">
+          <span className="text-muted-foreground text-xs">{timeOpen ? "▲" : "▼"}</span>
+        </button>
+        {timeOpen && <div className="flex gap-1 px-3 py-2">
           <ScrollColumn items={hours12} selected={hour} onSelect={handleHour} />
           <div className="flex items-center justify-center text-lg font-black text-primary/40 px-1">:</div>
           <ScrollColumn items={minutes} selected={minute} onSelect={handleMinute} />
           <div className="w-px bg-border self-stretch my-2" />
           <ScrollColumn items={ampmOptions} selected={ampm} onSelect={handleAmpm} renderItem={(v) => v} />
-        </div>
+        </div>}
       </div>
     </div>
   );
