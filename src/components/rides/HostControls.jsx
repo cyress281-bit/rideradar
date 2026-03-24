@@ -40,6 +40,8 @@ export default function HostControls({ ride, rideId }) {
       status_message: form.status_message || undefined,
     });
     queryClient.invalidateQueries({ queryKey: ["ride-detail", rideId] });
+    queryClient.invalidateQueries({ queryKey: ["rides-home"] });
+    queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
     toast({ title: "Ride updated!" });
     setSaving(false);
     setOpen(false);
