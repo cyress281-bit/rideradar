@@ -1,171 +1,114 @@
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import React, { useRef, useEffect } from "react";
+import { CalendarDays, Clock } from "lucide-react";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function pad(n) { return String(n).padStart(2, "0"); }
+
+function ScrollColumn({ items, selected, onSelect, renderItem }) {
+  const ref = useRef(null);
+  const itemHeight = 40;
+
+  useEffect(() => {
+    const idx = items.indexOf(selected);
+    if (ref.current && idx >= 0) {
+      ref.current.scrollTop = idx * itemHeight - itemHeight; // center-ish
+    }
+  }, [selected]);
+
+  return (
+    <div className="relative flex-1">
+      {/* Fade top */}
+      <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-card to-transparent z-10 pointer-events-none rounded-t-xl" />
+      {/* Fade bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card to-transparent z-10 pointer-events-none rounded-b-xl" />
+      {/* Center highlight */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-primary/10 border-y border-primary/20 z-0 pointer-events-none" />
+
+      <div
+        ref={ref}
+        className="h-32 overflow-y-auto overflow-x-hidden scrollbar-hide relative"
+        style={{ scrollSnapType: "y mandatory" }}
+      >
+        {/* Padding top/bottom so items can center */}
+        <div style={{ height: itemHeight * 1.5 }} />
+        {items.map((item) => (
+          <div
+            key={item}
+            onClick={() => onSelect(item)}
+            style={{ height: itemHeight, scrollSnapAlign: "center" }}
+            className={`flex items-center justify-center cursor-pointer text-sm font-bold transition-colors
+              ${selected === item ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {renderItem ? renderItem(item) : pad(item)}
+          </div>
+        ))}
+        <div style={{ height: itemHeight * 1.5 }} />
+      </div>
+    </div>
+  );
+}
 
 export default function DateTimePicker({ value, onChange, minDate }) {
   const now = minDate ? new Date(minDate) : new Date();
   const parsed = value ? new Date(value) : null;
 
-  const [viewYear, setViewYear] = useState(parsed ? parsed.getFullYear() : now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(parsed ? parsed.getMonth() : now.getMonth());
-  const [selectedDate, setSelectedDate] = useState(parsed ? {
-    y: parsed.getFullYear(), m: parsed.getMonth(), d: parsed.getDate()
-  } : null);
-  const [hour, setHour] = useState(parsed ? parsed.getHours() : now.getHours());
-  const [minute, setMinute] = useState(parsed ? Math.ceil(parsed.getMinutes() / 5) * 5 : Math.ceil(now.getMinutes() / 5) * 5);
-
-  const emitChange = (date, h, min) => {
-    if (!date) return;
-    const dt = new Date(date.y, date.m, date.d, h, min);
-    // Format as datetime-local string
-    const str = `${date.y}-${pad(date.m + 1)}-${pad(date.d)}T${pad(h)}:${pad(min)}`;
-    onChange?.(str);
-  };
-
-  const handleDayClick = (d) => {
-    const nd = { y: viewYear, m: viewMonth, d };
-    setSelectedDate(nd);
-    emitChange(nd, hour, minute);
-  };
-
-  const handleHour = (h) => {
-    setHour(h);
-    if (selectedDate) emitChange(selectedDate, h, minute);
-  };
-
-  const handleMinute = (min) => {
-    setMinute(min);
-    if (selectedDate) emitChange(selectedDate, hour, min);
-  };
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
-  };
-
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  };
-
-  // Build calendar days
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  const isSelected = (d) =>
-    selectedDate && selectedDate.y === viewYear && selectedDate.m === viewMonth && selectedDate.d === d;
-
-  const isPast = (d) => {
-    const cellDate = new Date(viewYear, viewMonth, d, 23, 59);
-    return cellDate < now;
-  };
-
+  const currentYear = now.getFullYear();
+  const years = [currentYear, currentYear + 1];
+  const allMonths = Array.from({ length: 12 }, (_, i) => i);
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
+  const [month, setMonth] = React.useState(parsed ? parsed.getMonth() : now.getMonth());
+  const [day, setDay] = React.useState(parsed ? parsed.getDate() : now.getDate());
+  const [year, setYear] = React.useState(parsed ? parsed.getFullYear() : currentYear);
+  const [hour, setHour] = React.useState(parsed ? parsed.getHours() : now.getHours());
+  const [minute, setMinute] = React.useState(parsed ? Math.ceil(parsed.getMinutes() / 5) * 5 % 60 : Math.ceil(now.getMinutes() / 5) * 5 % 60);
+
+  const emit = (m, d, y, h, min) => {
+    const str = `${y}-${pad(m + 1)}-${pad(d)}T${pad(h)}:${pad(min)}`;
+    onChange?.(str);
+  };
+
+  const handleMonth = (v) => { setMonth(v); emit(v, day, year, hour, minute); };
+  const handleDay = (v) => { setDay(v); emit(month, v, year, hour, minute); };
+  const handleYear = (v) => { setYear(v); emit(month, day, v, hour, minute); };
+  const handleHour = (v) => { setHour(v); emit(month, day, year, v, minute); };
+  const handleMinute = (v) => { setMinute(v); emit(month, day, year, hour, v); };
+
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden select-none">
-      {/* Calendar header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <button type="button" onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors">
-          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <span className="text-sm font-bold">{MONTHS[viewMonth]} {viewYear}</span>
-        <button type="button" onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors">
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
-
-      {/* Day headers */}
-      <div className="grid grid-cols-7 px-3 pt-2">
-        {DAYS.map(d => (
-          <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
-        ))}
-      </div>
-
-      {/* Day cells */}
-      <div className="grid grid-cols-7 px-3 pb-3 gap-y-1">
-        {cells.map((d, i) => (
-          <div key={i} className="flex items-center justify-center">
-            {d ? (
-              <button
-                type="button"
-                disabled={isPast(d)}
-                onClick={() => handleDayClick(d)}
-                className={`w-8 h-8 rounded-full text-xs font-semibold transition-all
-                  ${isPast(d) ? "text-muted-foreground/30 cursor-not-allowed" :
-                    isSelected(d) ? "bg-primary text-primary-foreground shadow-[0_0_10px_rgba(0,240,50,0.4)]" :
-                    "hover:bg-secondary text-foreground"
-                  }`}
-              >
-                {d}
-              </button>
-            ) : null}
-          </div>
-        ))}
-      </div>
-
-      {/* Time picker */}
-      <div className="border-t border-border px-4 py-3 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <Clock className="w-3.5 h-3.5" /> Time
+    <div className="space-y-3">
+      {/* Date box */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+          <CalendarDays className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Date</span>
+          <span className="ml-auto text-xs font-bold text-primary">
+            {MONTHS[month]} {pad(day)}, {year}
+          </span>
         </div>
-        <div className="flex gap-3">
-          {/* Hour scroll */}
-          <div className="flex-1">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Hour</p>
-            <div className="h-32 overflow-y-auto rounded-xl bg-secondary/50 border border-border">
-              {hours.map(h => (
-                <button
-                  key={h}
-                  type="button"
-                  onClick={() => handleHour(h)}
-                  className={`w-full text-center py-1.5 text-sm font-semibold transition-colors
-                    ${hour === h ? "bg-primary text-primary-foreground" : "hover:bg-secondary text-foreground"}`}
-                >
-                  {pad(h)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Minute scroll */}
-          <div className="flex-1">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Minute</p>
-            <div className="h-32 overflow-y-auto rounded-xl bg-secondary/50 border border-border">
-              {minutes.map(m => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => handleMinute(m)}
-                  className={`w-full text-center py-1.5 text-sm font-semibold transition-colors
-                    ${minute === m ? "bg-primary text-primary-foreground" : "hover:bg-secondary text-foreground"}`}
-                >
-                  {pad(m)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Preview */}
-          <div className="flex items-center justify-center flex-1">
-            <div className="text-center">
-              <div className="text-2xl font-black text-primary tabular-nums">
-                {pad(hour)}:{pad(minute)}
-              </div>
-              {selectedDate && (
-                <div className="text-[10px] text-muted-foreground mt-1">
-                  {MONTHS[selectedDate.m].slice(0,3)} {selectedDate.d}
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="flex gap-1 px-3 py-2">
+          <ScrollColumn items={allMonths} selected={month} onSelect={handleMonth} renderItem={(m) => MONTHS[m]} />
+          <div className="w-px bg-border self-stretch my-2" />
+          <ScrollColumn items={days} selected={day} onSelect={handleDay} />
+          <div className="w-px bg-border self-stretch my-2" />
+          <ScrollColumn items={years} selected={year} onSelect={handleYear} renderItem={(y) => String(y)} />
+        </div>
+      </div>
+
+      {/* Time box */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+          <Clock className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Time</span>
+          <span className="ml-auto text-xs font-bold text-primary">{pad(hour)}:{pad(minute)}</span>
+        </div>
+        <div className="flex gap-1 px-3 py-2">
+          <ScrollColumn items={hours} selected={hour} onSelect={handleHour} />
+          <div className="flex items-center justify-center text-lg font-black text-primary/40 px-1">:</div>
+          <ScrollColumn items={minutes} selected={minute} onSelect={handleMinute} />
         </div>
       </div>
     </div>
