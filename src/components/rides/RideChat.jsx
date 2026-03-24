@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import useGeolocation from "@/hooks/useGeolocation";
 import { Send, AlertTriangle, Navigation, MapPin, MessageSquare, ImagePlus, Loader, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,7 @@ export default function RideChat({ rideId, user, canChat, isHost, rideStatus }) 
   const [sharingLocation, setSharingLocation] = useState(false);
   const bottomRef = useRef(null);
   const photoInputRef = useRef(null);
-  const watchIdRef = useRef(null);
+  // watchIdRef replaced by useGeolocation hook
 
   const { data: messages = [] } = useQuery({
     queryKey: ["ride-chat", rideId],
@@ -58,38 +59,24 @@ export default function RideChat({ rideId, user, canChat, isHost, rideStatus }) 
     }
   }, [rideStatus, sharingLocation]);
 
-  // Start/stop GPS tracking for host
-  useEffect(() => {
-    if (!isHost || !sharingLocation || rideStatus !== "active" || !navigator.geolocation) return;
+  const handleHostPosition = async (lat, lng) => {
+    if (!isHost || !sharingLocation || rideStatus !== "active" || !user) return;
+    const username = user.username || user.email?.split("@")[0] || "host";
+    const existing = await base44.entities.RiderLocation.filter({ ride_id: rideId, user_email: user.email });
+    if (existing.length > 0) {
+      await base44.entities.RiderLocation.update(existing[0].id, { lat, lng });
+    } else {
+      await base44.entities.RiderLocation.create({
+        ride_id: rideId, user_email: user.email, username, lat, lng, is_active: true,
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ["host-location", rideId] });
+  };
 
-    const updateLocation = async (lat, lng) => {
-      const username = user.username || user.email?.split("@")[0] || "host";
-      const existing = await base44.entities.RiderLocation.filter({ ride_id: rideId, user_email: user.email });
-      if (existing.length > 0) {
-        await base44.entities.RiderLocation.update(existing[0].id, { lat, lng });
-      } else {
-        await base44.entities.RiderLocation.create({
-          ride_id: rideId,
-          user_email: user.email,
-          username,
-          lat,
-          lng,
-          is_active: true,
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: ["host-location", rideId] });
-    };
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => updateLocation(pos.coords.latitude, pos.coords.longitude),
-      () => {},
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-    );
-
-    return () => {
-      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-    };
-  }, [isHost, sharingLocation, rideId, user, rideStatus, queryClient]);
+  useGeolocation({
+    onPosition: handleHostPosition,
+    enabled: isHost && sharingLocation && rideStatus === "active",
+  });
 
   // Real-time subscription
   useEffect(() => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import useGeolocation from "@/hooks/useGeolocation";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Radio, Layers, RefreshCw } from "lucide-react";
@@ -45,9 +46,8 @@ export default function LiveGrid() {
   const [checkedInRides, setCheckedInRides] = useState(new Set());
   const [showOtherRiders, setShowOtherRiders] = useState(true);
   const locationRecordIds = useRef({}); // ride_id -> riderLocation record id
-  const watchIdRef = useRef(null);
-  const lastTrackPointTime = useRef({}); // ride_id -> timestamp of last recorded track point
-  const TRACK_INTERVAL_MS = 15000; // record a track point every 15 seconds
+  const lastTrackPointTime = useRef({});
+  const TRACK_INTERVAL_MS = 15000;
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -201,18 +201,10 @@ export default function LiveGrid() {
     }
   }, [user, rides, allParticipants, checkedInRides, riderLocations, upsertLocation, queryClient]);
 
-  // Start GPS watch
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => handlePositionUpdate(pos.coords.latitude, pos.coords.longitude),
-      () => {},
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-    );
-    return () => {
-      if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
-    };
-  }, [handlePositionUpdate]);
+  const { position: geoPosition, error: geoError } = useGeolocation({
+    onPosition: handlePositionUpdate,
+    enabled: true,
+  });
 
   const activeRides = rides.filter((r) => r.status === "active");
   const meetupRides = rides.filter((r) => r.status === "meetup");
