@@ -106,6 +106,6 @@ export default function Home() {
         </PullToRefresh>
       </div>
       <CreateRideButton />
-    </div>
+    </>
   );
 }
