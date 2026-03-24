@@ -18,6 +18,7 @@ import RideDetail from './pages/RideDetail';
 
 import CreateRide from './pages/CreateRide';
 import Profile from './pages/Profile';
+import Feed from './pages/Feed';
 import Messages from './pages/Messages';
 
 const AuthenticatedApp = () => {
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/create-ride" element={<CreateRide />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/feed" element={<Feed />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
