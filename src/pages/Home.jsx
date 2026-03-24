@@ -35,9 +35,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <HomeHeader username={user?.username} user={user} />
-      <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex-1 overflow-y-auto">
+        <PullToRefresh onRefresh={handleRefresh}>
         <StatsBar
           totalRiders={totalRiders}
           activeRides={activeRides.length}
@@ -101,8 +102,9 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="h-24" />
-      </PullToRefresh>
+          <div className="h-24" />
+        </PullToRefresh>
+      </div>
       <CreateRideButton />
     </div>
   );
