@@ -24,12 +24,26 @@ export default function FeedPostCard({ post, currentUser }) {
     enabled: showComments,
   });
 
-  const toggleLike = async () => {
+  const likeMutation = useMutation({
+    mutationFn: ({ newLikes }) =>
+      base44.entities.FeedPost.update(post.id, { likes: newLikes, likes_count: newLikes.length }),
+    onMutate: async ({ newLikes }) => {
+      await qc.cancelQueries({ queryKey: ["feed-posts"] });
+      const prev = qc.getQueryData(["feed-posts"]);
+      qc.setQueryData(["feed-posts"], (old = []) =>
+        old.map((p) => p.id === post.id ? { ...p, likes: newLikes, likes_count: newLikes.length } : p)
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => qc.setQueryData(["feed-posts"], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["feed-posts"] }),
+  });
+
+  const toggleLike = () => {
     if (!currentUser) return;
     const likes = Array.isArray(post.likes) ? [...post.likes] : [];
     const newLikes = liked ? likes.filter((e) => e !== currentUser.email) : [...likes, currentUser.email];
-    await base44.entities.FeedPost.update(post.id, { likes: newLikes, likes_count: newLikes.length });
-    qc.invalidateQueries({ queryKey: ["feed-posts"] });
+    likeMutation.mutate({ newLikes });
   };
 
   const submitComment = useMutation({

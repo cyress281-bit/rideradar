@@ -74,25 +74,39 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
       .catch(() => {});
   }, [user, ride.id, ride.host_email]);
 
-  const handleJoin = async (e) => {
+  const joinMutation = useMutation({
+    mutationFn: async () => {
+      const username = user.username || user.email?.split("@")[0] || "rider";
+      await base44.entities.RideParticipant.create({
+        ride_id: ride.id, user_email: user.email, username, status: "approved", role: "rider",
+      });
+      await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["rides-home"] });
+      const prev = queryClient.getQueryData(["rides-home"]);
+      queryClient.setQueryData(["rides-home"], (old = []) =>
+        old.map((r) => r.id === ride.id ? { ...r, rider_count: (r.rider_count || 1) + 1 } : r)
+      );
+      setJoined(true);
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      queryClient.setQueryData(["rides-home"], ctx.prev);
+      setJoined(false);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["rides-home"] });
+      queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
+      queryClient.invalidateQueries({ queryKey: ["ride-participants", ride.id] });
+    },
+  });
+
+  const handleJoin = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user || joining || joined || isHost) return;
-    setJoining(true);
-    const username = user.username || user.email?.split("@")[0] || "rider";
-    await base44.entities.RideParticipant.create({
-      ride_id: ride.id,
-      user_email: user.email,
-      username,
-      status: "approved",
-      role: "rider",
-    });
-    await base44.entities.Ride.update(ride.id, { rider_count: (ride.rider_count || 1) + 1 });
-    queryClient.invalidateQueries({ queryKey: ["rides-home"] });
-    queryClient.invalidateQueries({ queryKey: ["rides-grid"] });
-    queryClient.invalidateQueries({ queryKey: ["ride-participants", ride.id] });
-    setJoined(true);
-    setJoining(false);
+    joinMutation.mutate();
   };
 
   return (
