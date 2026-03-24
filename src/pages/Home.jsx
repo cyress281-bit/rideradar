@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import HomeHeader from "../components/home/HomeHeader";
-import RadarDisplay from "../components/home/RadarDisplay";
+import StatsBar from "../components/home/StatsBar";
 import RidePreviewCard from "../components/rides/RidePreviewCard";
 import CreateRideButton from "../components/rides/CreateRideButton";
 
@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <HomeHeader username={user?.username} user={user} />
-      <RadarDisplay
+      <StatsBar
         totalRiders={totalRiders}
         activeRides={activeRides.length}
         meetups={meetupRides.length}
