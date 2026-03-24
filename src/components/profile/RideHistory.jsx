@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Route, Calendar, Users, MapPin } from "lucide-react";
+import { Route, Calendar, MapPin, Camera } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 
@@ -25,10 +25,20 @@ export default function RideHistory({ userEmail }) {
     enabled: rideParticipants.length > 0,
   });
 
-  // Exclude cancelled rides that were never fulfilled (meetup/active that got cancelled)
-  const visibleRides = rides.filter(r => r.status !== "cancelled");
+  const { data: ridePosts = [] } = useQuery({
+    queryKey: ["ride-feed-posts", userEmail],
+    queryFn: () => base44.entities.FeedPost.filter({ user_email: userEmail, post_type: "ride" }, "-created_date", 20),
+    enabled: !!userEmail,
+  });
 
+  const visibleRides = rides.filter(r => r.status !== "cancelled");
   const totalMiles = rides.reduce((sum, r) => sum + (r.estimated_miles || 0), 0);
+
+  // Merge ride records + feed posts into a unified timeline
+  const rideItems = [
+    ...visibleRides.map(r => ({ type: "ride", date: new Date(r.created_date), data: r })),
+    ...ridePosts.map(p => ({ type: "post", date: new Date(p.created_date), data: p })),
+  ].sort((a, b) => b.date - a.date);
 
   if (rideParticipants.length === 0) {
     return (
@@ -71,40 +81,60 @@ export default function RideHistory({ userEmail }) {
         </motion.div>
       </div>
 
-      {/* Recent rides */}
+      {/* Unified timeline */}
       <div className="space-y-2">
-        {visibleRides.slice(0, 5).map((ride, idx) => (
+        {rideItems.slice(0, 10).map((item, idx) => (
           <motion.div
-            key={ride.id}
+            key={item.data.id + item.type}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.05 }}
             className="bg-secondary/40 rounded-lg p-3 border border-border/50"
           >
-            <div className="flex items-start justify-between gap-2 mb-1.5">
-              <p className="text-sm font-medium leading-snug flex-1">{ride.title}</p>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
-                ride.status === "completed" ? "bg-green-500/15 text-green-400" :
-                ride.status === "active" ? "bg-primary/15 text-primary" :
-                "bg-muted/15 text-muted-foreground"
-              }`}>
-                {ride.status}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {formatDistanceToNow(new Date(ride.created_date), { addSuffix: true })}
-              </div>
-              {ride.estimated_miles && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {ride.estimated_miles} mi
+            {item.type === "ride" ? (
+              <>
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <p className="text-sm font-medium leading-snug flex-1">{item.data.title}</p>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
+                    item.data.status === "completed" ? "bg-green-500/15 text-green-400" :
+                    item.data.status === "active" ? "bg-primary/15 text-primary" :
+                    "bg-muted/15 text-muted-foreground"
+                  }`}>{item.data.status}</span>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {formatDistanceToNow(item.date, { addSuffix: true })}
+                  </div>
+                  {item.data.estimated_miles && (
+                    <div className="flex items-center gap-1"><MapPin className="w-3 h-3" />{item.data.estimated_miles} mi</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                    <Route className="w-2.5 h-2.5" /> Ride Post
+                  </span>
+                  {item.data.media_url && <Camera className="w-3 h-3 text-muted-foreground" />}
+                </div>
+                <p className="text-sm text-foreground leading-snug mb-1.5">{item.data.content}</p>
+                {item.data.media_url && (
+                  <div className="rounded-lg overflow-hidden h-28 mt-1.5">
+                    <img src={item.data.media_url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />{formatDistanceToNow(item.date, { addSuffix: true })}
+                </p>
+              </>
+            )}
           </motion.div>
         ))}
+        {rideItems.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-4">No ride activity yet.</p>
+        )}
       </div>
     </div>
   );
