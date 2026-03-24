@@ -101,7 +101,7 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
-        className="rounded-xl border border-border bg-secondary/40 overflow-hidden hover:bg-secondary/50 transition-colors cursor-pointer"
+        className="rounded-2xl border border-border/60 bg-card overflow-hidden active:bg-secondary/30 transition-colors cursor-pointer"
       >
       {/* Always show details */}
       <div className="px-3 py-3 space-y-2.5">
@@ -128,23 +128,14 @@ export default function RidePreviewCard({ ride, index = 0, user }) {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 text-[10px]">
-          <div className={`rounded-lg p-2 text-center ${
-            ride.status === "active"
-              ? "bg-green-500/15 text-green-400 border border-green-500/20"
-              : "bg-secondary/40"
-          }`}>
-            <p className="font-bold">{ride.status === "active" ? "Active" : countdown || "Loading..."}</p>
-            <p className="text-muted-foreground">{ride.status === "active" ? "Status" : "Countdown"}</p>
-          </div>
-          <div className="bg-secondary/40 rounded-lg p-2 text-center">
-            <p className="font-bold">{ride.duration_minutes}m</p>
-            <p className="text-muted-foreground">Duration</p>
-          </div>
-          <div className="bg-secondary/40 rounded-lg p-2 text-center">
-            <p className="font-bold">{ride.rider_count || 1}{ride.max_riders ? `/${ride.max_riders}` : ""}</p>
-            <p className="text-muted-foreground">Riders</p>
-          </div>
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className={`font-semibold ${
+            ride.status === "active" ? "text-primary" : "text-foreground"
+          }`}>{ride.status === "active" ? "Live" : countdown || "—"}</span>
+          <span>·</span>
+          <span>{ride.duration_minutes}m</span>
+          <span>·</span>
+          <span className="flex items-center gap-1"><Users className="w-3 h-3" />{ride.rider_count || 1}{ride.max_riders ? `/${ride.max_riders}` : ""}</span>
         </div>
 
         {/* Tags */}

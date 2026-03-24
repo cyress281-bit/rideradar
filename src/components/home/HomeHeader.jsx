@@ -16,9 +16,9 @@ export default function HomeHeader({ username, user }) {
           <img
             src="https://media.base44.com/images/public/69c00371996a3698d9301734/b98c6b34e_generated_image.png"
             alt="RideRadar logo"
-            className="w-9 h-9 rounded-xl object-cover shadow-[0_0_14px_rgba(0,240,50,0.6)]"
+            className="w-9 h-9 rounded-xl object-cover"
           />
-          <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background shadow-[0_0_6px_rgba(0,240,50,0.8)]" />
+          <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
         </motion.div>
         <div>
           <h1 className="text-lg font-bold tracking-tight">RideRadar</h1>
@@ -28,7 +28,7 @@ export default function HomeHeader({ username, user }) {
 
       <div className="flex items-center gap-2">
         <SOSButton user={user} />
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
+        <button className="relative w-11 h-11 flex items-center justify-center rounded-xl bg-secondary/50 active:bg-secondary transition-colors">
           <Bell className="w-4.5 h-4.5 text-foreground" />
         </button>
       </div>

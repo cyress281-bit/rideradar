@@ -12,9 +12,9 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background font-inter">
+    <div className="min-h-screen bg-background font-inter" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       <RideNowAlert user={user} />
-      <main className="pb-20">
+      <main className="pb-24">
         <Outlet />
       </main>
       <BottomNav />
