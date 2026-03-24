@@ -13,14 +13,6 @@ import MotorcycleModels from "@/components/profile/MotorcycleModels";
 import RideHistory from "@/components/profile/RideHistory";
 import GarageGallery from "@/components/profile/GarageGallery";
 
-const vibeOptions = [
-  { value: "chill", label: "😌 Chill" },
-  { value: "fast", label: "⚡ Fast" },
-  { value: "night_ride", label: "🌙 Night Ride" },
-  { value: "scenic", label: "🏔️ Scenic" },
-  { value: "adventure", label: "🧭 Adventure" },
-  { value: "commute", label: "🛣️ Commute" },
-];
 
 const TABS = [
   { id: "garage", label: "Garage", icon: Grid3X3 },
@@ -51,7 +43,6 @@ export default function Profile() {
         bike_year: u.bike_year || "",
         bike_class: u.bike_class || "",
         motorcycle_models: u.motorcycle_models || [],
-        ride_preferences: u.ride_preferences || [],
         invisible_mode: u.invisible_mode || false,
         sos_notifications: u.sos_notifications !== false,
       });
@@ -92,22 +83,12 @@ export default function Profile() {
         bike_year: form.bike_year ? parseInt(form.bike_year) : undefined,
         bike_class: form.bike_class || undefined,
         motorcycle_models: form.motorcycle_models,
-        ride_preferences: form.ride_preferences,
         invisible_mode: form.invisible_mode,
         sos_notifications: form.sos_notifications,
       });
     },
     onSuccess: () => toast({ title: "Profile saved!" }),
   });
-
-  const toggleVibe = (vibe) => {
-    setForm((f) => ({
-      ...f,
-      ride_preferences: f.ride_preferences.includes(vibe)
-        ? f.ride_preferences.filter((v) => v !== vibe)
-        : [...f.ride_preferences, vibe],
-    }));
-  };
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -177,19 +158,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Vibe tags */}
-        {form.ride_preferences.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-1.5 mt-3 max-w-xs">
-            {form.ride_preferences.map((v) => {
-              const opt = vibeOptions.find((o) => o.value === v);
-              return (
-                <span key={v} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
-                  {opt?.label || v}
-                </span>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Tabs */}
@@ -273,25 +241,6 @@ export default function Profile() {
             {/* Motorcycle models */}
             <MotorcycleModels models={form.motorcycle_models} onUpdate={(models) => updateField("motorcycle_models", models)} />
 
-            {/* Ride preferences */}
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Ride Preferences</Label>
-              <div className="flex flex-wrap gap-2">
-                {vibeOptions.map((v) => (
-                  <button
-                    key={v.value}
-                    onClick={() => toggleVibe(v.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                      form.ride_preferences.includes(v.value)
-                        ? "bg-primary/15 text-primary border-primary/30"
-                        : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60"
-                    }`}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Privacy */}
             <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
